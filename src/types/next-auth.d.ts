@@ -10,7 +10,14 @@ declare module "next-auth" {
       id: string;
       organizationId: string;
       role: UserRole;
-    } & DefaultSession["user"];
+      // Our User.name column is a required, non-nullable String (see
+      // schema.prisma) — NextAuth's DefaultSession types it as
+      // `string | null | undefined` for the general OAuth-provider case,
+      // which doesn't apply to us (credentials-only auth, always backed by
+      // our own User row). Overriding here instead of null-checking
+      // `user.name` at every call site across the dashboard.
+      name: string;
+    } & Omit<DefaultSession["user"], "name">;
   }
 
   interface User {
