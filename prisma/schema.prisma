@@ -1,0 +1,547 @@
+// Staffic — core data model (Phase 0/1)
+// Multi-tenant: every business record is scoped to an Organization (org_id).
+// See docs/PLAN.md and docs/DATA_MODEL.md for the full rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // DATABASE_URL: pooled (pgbouncer) connection, used at runtime.
+  // DIRECT_URL: unpooled connection, used only for migrations — pooled
+  // connections (e.g. Supabase's transaction-mode pooler) don't support the
+  // prepared statements Prisma Migrate needs. Both point at the same
+  // database; only the port/pooling differs. See web/.env.example.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Orgs & Users
+// ---------------------------------------------------------------------------
+
+enum OrganizationType {
+  CLIENT   // hospital / health system
+  AGENCY   // staffing agency
+  PLATFORM // internal Staffic operator org (support/admin)
+}
+
+// CLIENT orgs are approved immediately on self-signup (low risk — they only
+// ever see their own data). AGENCY orgs start PENDING and must be approved
+// by a PLATFORM_ADMIN before they can see the marketplace or submit
+// candidates — this is the "vetted agency network" trust boundary. Existing/
+// seeded orgs default to APPROVED so this doesn't retroactively lock anyone out.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Organization {
+  id             String           @id @default(cuid())
+  name           String
+  type           OrganizationType
+  approvalStatus ApprovalStatus   @default(APPROVED)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  users               User[]
+  requisitions        Requisition[]          @relation("ClientRequisitions")
+  candidates          Candidate[]             @relation("AgencyCandidates")
+  submissions         Submission[]            @relation("AgencySubmissions")
+  auditLogs           AuditLog[]
+  floatPoolWorkers     FloatPoolWorker[]
+  floatPoolAssignments FloatPoolAssignment[]
+  invoicesAsClient     Invoice[]              @relation("ClientInvoices")
+  invoicesAsAgency     Invoice[]              @relation("AgencyInvoices")
+  directHireJobs       DirectHireJob[]
+  inviteTokens         InviteToken[]
+
+  @@map("organizations")
+}
+
+enum UserRole {
+  PLATFORM_ADMIN     // Staffic internal ops/admin
+  CLIENT_ADMIN       // hospital-side admin — manages users, sees all client org data
+  CLIENT_MANAGER     // hospital-side hiring manager — creates/manages requisitions
+  AGENCY_ADMIN       // agency-side admin — manages agency users
+  AGENCY_RECRUITER   // agency-side recruiter — submits candidates
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  passwordHash   String
+  name           String
+  role           UserRole
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  createdRequisitions       Requisition[]         @relation("RequisitionCreatedBy")
+  submissionsReviewed       Submission[]          @relation("SubmissionReviewedBy")
+  auditLogs                 AuditLog[]
+  createdFloatPoolAssignments FloatPoolAssignment[] @relation("FloatPoolAssignmentCreatedBy")
+  timesheetsSubmitted        Timesheet[]           @relation("TimesheetSubmittedBy")
+  timesheetsReviewed         Timesheet[]           @relation("TimesheetReviewedBy")
+  createdDirectHireJobs      DirectHireJob[]       @relation("DirectHireJobCreatedBy")
+  jobApplicationsReviewed    JobApplication[]      @relation("JobApplicationReviewedBy")
+  sentInvites                InviteToken[]         @relation("InviteTokenInvitedBy")
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Team invites — lets an existing org admin add a teammate to their own
+// org, instead of every signup creating a brand-new Organization. Closes
+// the gap noted in docs/DECISIONS.md: previously a second person at the
+// same hospital signing up would accidentally create a second, unrelated
+// org, because self-serve signup only ever knew how to create new orgs.
+// ---------------------------------------------------------------------------
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
+model InviteToken {
+  id             String       @id @default(cuid())
+  token          String       @unique // opaque random string, not the same as id — sent in the invite link
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email          String   // who the invite is for — the accepting account must use this email
+  role           UserRole // the role they'll get on acceptance (must match the org's own role family)
+  status         InviteStatus @default(PENDING)
+
+  invitedById    String
+  invitedBy      User     @relation("InviteTokenInvitedBy", fields: [invitedById], references: [id])
+
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invite_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Requisitions (client posts an open role)
+// ---------------------------------------------------------------------------
+
+enum RequisitionStatus {
+  DRAFT
+  OPEN
+  ON_HOLD
+  FILLED
+  CANCELLED
+}
+
+enum Specialty {
+  LOCUM_TENENS
+  NURSING
+  ALLIED_HEALTH
+  NON_CLINICAL
+}
+
+model Requisition {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation("ClientRequisitions", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  title          String
+  specialty      Specialty
+  location       String
+  rateMin        Decimal           @db.Decimal(10, 2)
+  rateMax        Decimal           @db.Decimal(10, 2)
+  startDate      DateTime?
+  status         RequisitionStatus @default(DRAFT)
+  description    String?
+
+  createdById    String
+  createdBy      User              @relation("RequisitionCreatedBy", fields: [createdById], references: [id])
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  submissions    Submission[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("requisitions")
+}
+
+// ---------------------------------------------------------------------------
+// Candidates (owned by an agency org)
+// ---------------------------------------------------------------------------
+
+model Candidate {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation("AgencyCandidates", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  email          String?
+  phone          String?
+  credentials    String[]     // e.g. ["RN", "BLS", "ACLS"]
+  resumeUrl      String?      // signed/expiring URL reference, not raw file storage
+  documentUrls   String[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  submissions    Submission[]
+
+  @@index([organizationId])
+  @@map("candidates")
+}
+
+// ---------------------------------------------------------------------------
+// Submissions (agency submits candidate against a client's requisition)
+// ---------------------------------------------------------------------------
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  INTERVIEW_REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+model Submission {
+  id             String           @id @default(cuid())
+
+  requisitionId  String
+  requisition    Requisition      @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+
+  candidateId    String
+  candidate      Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  agencyOrgId    String
+  agencyOrg      Organization     @relation("AgencySubmissions", fields: [agencyOrgId], references: [id], onDelete: Cascade)
+
+  proposedRate   Decimal          @db.Decimal(10, 2)
+  status         SubmissionStatus @default(SUBMITTED)
+
+  reviewedById   String?
+  reviewedBy     User?            @relation("SubmissionReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  placement      Placement?
+
+  @@index([requisitionId])
+  @@index([agencyOrgId])
+  @@index([status])
+  @@map("submissions")
+}
+
+// ---------------------------------------------------------------------------
+// Placements (an approved submission becomes a placement)
+// ---------------------------------------------------------------------------
+
+enum PlacementStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  TERMINATED
+}
+
+model Placement {
+  id           String          @id @default(cuid())
+
+  submissionId String          @unique
+  submission   Submission      @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  startDate    DateTime
+  endDate      DateTime?
+  actualRate   Decimal         @db.Decimal(10, 2)
+  status       PlacementStatus @default(UPCOMING)
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  timesheets   Timesheet[]
+  invoices     Invoice[]
+
+  @@map("placements")
+}
+
+// ---------------------------------------------------------------------------
+// Timesheets & Invoices (Phase 4 — EOR-adjacent billing workflow).
+//
+// Scope note: this covers agency-sourced Placements only. Internal float
+// pool workers (FloatPoolWorker/FloatPoolAssignment) are the client's own
+// employees and already run through the client's existing payroll system —
+// there's no reason for Staffic to reinvent that, so no Timesheet/Invoice
+// path touches the float pool. See docs/DECISIONS.md.
+//
+// IMPORTANT: nothing here moves money. `Invoice.status` is a manually-set
+// record-keeping field (an agency marks SENT after billing the client
+// through their normal process; a client marks PAID after actually paying
+// through their normal process/bank/AP tooling). This is a ledger, not a
+// payment processor — see docs/DECISIONS.md for why no payment provider
+// integration (Deel/Remote/Check/Gusto, as PLAN.md originally sketched)
+// was wired up in this pass.
+// ---------------------------------------------------------------------------
+
+enum TimesheetStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model Timesheet {
+  id             String          @id @default(cuid())
+
+  placementId    String
+  placement      Placement       @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  weekStartDate  DateTime        // the Monday of the week this timesheet covers
+  hoursWorked    Decimal         @db.Decimal(5, 2)
+  status         TimesheetStatus @default(SUBMITTED)
+  notes          String?
+
+  submittedById  String
+  submittedBy    User            @relation("TimesheetSubmittedBy", fields: [submittedById], references: [id])
+
+  reviewedById   String?
+  reviewedBy     User?           @relation("TimesheetReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+
+  invoiceId      String?
+  invoice        Invoice?        @relation(fields: [invoiceId], references: [id])
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([placementId, weekStartDate])
+  @@index([placementId])
+  @@index([invoiceId])
+  @@map("timesheets")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+
+  placementId    String
+  placement      Placement     @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  // Denormalized from the placement's submission, so invoices can be
+  // queried directly by either party without joining through Submission.
+  clientOrgId    String
+  clientOrg      Organization  @relation("ClientInvoices", fields: [clientOrgId], references: [id], onDelete: Cascade)
+  agencyOrgId    String
+  agencyOrg      Organization  @relation("AgencyInvoices", fields: [agencyOrgId], references: [id], onDelete: Cascade)
+
+  periodStart    DateTime
+  periodEnd      DateTime
+  totalHours     Decimal       @db.Decimal(6, 2)
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  status         InvoiceStatus @default(DRAFT)
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  timesheets     Timesheet[]
+
+  @@index([clientOrgId])
+  @@index([agencyOrgId])
+  @@map("invoices")
+}
+
+// ---------------------------------------------------------------------------
+// Direct sourcing (Phase 4 — SourceDirect-equivalent). Permanent-hire job
+// postings a client manages themselves, with candidates applying directly —
+// no agency, and the applicant doesn't need a Staffic account at all. This
+// is the one part of the schema meant to be read/written by the public
+// internet (see the public /jobs routes) — kept deliberately minimal so
+// there's very little surface area exposed unauthenticated.
+// ---------------------------------------------------------------------------
+
+enum DirectHireJobStatus {
+  OPEN
+  CLOSED
+  FILLED
+}
+
+model DirectHireJob {
+  id             String              @id @default(cuid())
+
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  title          String
+  specialty      Specialty
+  location       String
+  description    String?
+  salaryMin      Decimal?            @db.Decimal(10, 2)
+  salaryMax      Decimal?            @db.Decimal(10, 2)
+  status         DirectHireJobStatus @default(OPEN)
+
+  createdById    String
+  createdBy      User                @relation("DirectHireJobCreatedBy", fields: [createdById], references: [id])
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  applications   JobApplication[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("direct_hire_jobs")
+}
+
+enum JobApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  INTERVIEWING
+  OFFERED
+  HIRED
+  REJECTED
+}
+
+model JobApplication {
+  id             String               @id @default(cuid())
+
+  jobId          String
+  job            DirectHireJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  applicantName  String
+  applicantEmail String
+  applicantPhone String?
+  resumeUrl      String?
+  coverNote      String?
+  status         JobApplicationStatus @default(APPLIED)
+
+  // Used only for the DB-backed rate limit on the public apply endpoint
+  // (see submitJobApplication in directHire.ts) — not exposed anywhere,
+  // not treated as PHI, just an abuse-prevention signal.
+  ipAddress      String?
+
+  reviewedById   String?
+  reviewedBy     User?                @relation("JobApplicationReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([jobId])
+  @@map("job_applications")
+}
+
+// ---------------------------------------------------------------------------
+// Internal float pool (Phase 3 — "LIFT" equivalent). A client org's own
+// bench of contingent workers, managed entirely in-house — no agency
+// involved. Deliberately NOT modeled as Candidate/Submission/Placement:
+// those three exist specifically to move data between two different orgs
+// (agency -> client), and an agency should never be able to see or touch
+// a client's internal float pool. Keeping this as its own pair of models
+// makes that boundary a schema-level fact, not just an RBAC check.
+// ---------------------------------------------------------------------------
+
+enum FloatPoolWorkerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model FloatPoolWorker {
+  id             String                @id @default(cuid())
+  organizationId String
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  email          String?
+  phone          String?
+  specialty      Specialty
+  credentials    String[]
+  status         FloatPoolWorkerStatus @default(ACTIVE)
+
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  assignments    FloatPoolAssignment[]
+
+  @@index([organizationId])
+  @@map("float_pool_workers")
+}
+
+enum FloatPoolAssignmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model FloatPoolAssignment {
+  id             String                    @id @default(cuid())
+
+  workerId       String
+  worker         FloatPoolWorker           @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  // Denormalized copy of the worker's org — lets every query here be scoped
+  // the same way every other model is (organizationId), instead of joining
+  // through worker just to check access.
+  organizationId String
+  organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  unit           String                    // e.g. "ICU - 4th Floor", "ED", "Regional Float Pool"
+  startDate      DateTime
+  endDate        DateTime
+  status         FloatPoolAssignmentStatus @default(SCHEDULED)
+  notes          String?
+
+  createdById    String
+  createdBy      User                      @relation("FloatPoolAssignmentCreatedBy", fields: [createdById], references: [id])
+
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@index([organizationId])
+  @@index([workerId])
+  @@map("float_pool_assignments")
+}
+
+// ---------------------------------------------------------------------------
+// Audit log — every access/mutation of sensitive records gets logged here.
+// HIPAA-aware by design: never store PHI/document contents in metadata,
+// only IDs and action type.
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String       @id @default(cuid())
+
+  actorUserId    String?
+  actorUser      User?        @relation(fields: [actorUserId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  action         String       // e.g. "REQUISITION_CREATE", "SUBMISSION_APPROVE"
+  entityType     String       // e.g. "Requisition", "Submission", "Candidate"
+  entityId       String
+
+  metadata       Json?        // small, non-PHI context only (e.g. { "from": "OPEN", "to": "FILLED" })
+
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

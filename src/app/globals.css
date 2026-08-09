@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+ * This app is deliberately light-themed only — every component uses
+ * explicit Tailwind classes (bg-white, text-ink, etc.), there's no
+ * dark: variant anywhere and no theme toggle. The Next.js scaffold default
+ * included a `prefers-color-scheme: dark` media query that swapped
+ * --background/--foreground to near-black/near-white and applied them via
+ * an unlayered `body { }` rule — Tailwind v4 puts utility classes inside
+ * CSS cascade layers, and unlayered rules always win over layered ones
+ * regardless of specificity, so that single unlayered rule was silently
+ * overriding every component's light-theme classes on any browser/OS set
+ * to dark mode. Removed rather than patched — there's nothing here meant
+ * to render in dark mode, so there's no reason to keep the machinery that
+ * makes it possible to accidentally trigger. If dark mode is wanted later,
+ * add it deliberately with next-themes + dark: variants, not this.
+ */
+/*
+ * Design tokens from the "Staffic style guide" mockup (see docs/DECISIONS.md
+ * for provenance — extracted from a design-tool export, then applied by
+ * hand across the app). These become real Tailwind utilities automatically
+ * (Tailwind v4 `@theme`): --color-primary -> bg-primary/text-primary/etc.
+ */
+@theme inline {
+  --font-sans: var(--font-public-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-primary: #0f6e64;
+  --color-primary-dark: #0b5a52;
+  --color-primary-tint: #e6f2f0;
+
+  --color-ink: #161c22; /* primary text */
+  --color-muted: #6b7280; /* secondary text */
+  --color-border: #e2e5e9;
+  --color-surface: #f7f8fa; /* page background */
+  --color-hover: #f3f4f6;
+
+  --color-status-blue: #1d5fa6;
+  --color-status-blue-tint: #e8f1fa;
+  --color-status-green: #1f7a4d;
+  --color-status-green-tint: #e8f6ee;
+  --color-status-amber: #c08a1f;
+  --color-status-amber-tint: #fbf1dc;
+  --color-status-red: #b3261e;
+  --color-status-red-tint: #fbeae9;
+  --color-status-gray: #6b7280;
+  --color-status-gray-tint: #f0f1f3;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Hides the scrollbar on the header nav (it still scrolls horizontally
+   with a mouse wheel/trackpad/touch when it doesn't fit — this just drops
+   the visible track/thumb Tailwind has no built-in utility for). */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
+}
