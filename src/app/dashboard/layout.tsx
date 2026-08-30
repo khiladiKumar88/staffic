@@ -4,33 +4,67 @@ import { prisma } from "@/lib/prisma";
 import { SignOutButton } from "@/components/sign-out-button";
 import { isClientRole, isAgencyRole, isPlatformAdmin } from "@/lib/rbac";
 import { DashboardShell } from "./dashboard-shell";
+import type { NavItem } from "./sidebar";
 
-const CLIENT_NAV = [
+const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/requisitions", label: "Requisitions" },
   { href: "/dashboard/float-pool", label: "Float Pool" },
   { href: "/dashboard/direct-hire", label: "Direct Hire" },
   { href: "/dashboard/timesheets", label: "Timesheets" },
-  { href: "/dashboard/invoices", label: "Invoices" },
+  {
+    href: "/dashboard/invoices",
+    label: "Invoices",
+    children: [
+      { href: "/dashboard/invoices", label: "All Invoices" },
+    ],
+  },
   { href: "/dashboard/reports", label: "Reports" },
   { href: "/dashboard/team", label: "Team" },
+  {
+    href: "/dashboard/settings",
+    label: "Settings",
+    children: [
+      { href: "/dashboard/team", label: "Team Members" },
+    ],
+  },
 ];
 
-const AGENCY_NAV = [
+const AGENCY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/marketplace", label: "Marketplace" },
   { href: "/dashboard/candidates", label: "Candidates" },
   { href: "/dashboard/submissions", label: "My Submissions" },
   { href: "/dashboard/timesheets", label: "Timesheets" },
-  { href: "/dashboard/invoices", label: "Invoices" },
+  {
+    href: "/dashboard/invoices",
+    label: "Invoices",
+    children: [
+      { href: "/dashboard/invoices", label: "All Invoices" },
+    ],
+  },
   { href: "/dashboard/reports", label: "Reports" },
   { href: "/dashboard/team", label: "Team" },
+  {
+    href: "/dashboard/settings",
+    label: "Settings",
+    children: [
+      { href: "/dashboard/team", label: "Team Members" },
+    ],
+  },
 ];
 
-const PLATFORM_NAV = [
+const PLATFORM_NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/admin/agencies", label: "Pending Agencies" },
   { href: "/dashboard/reports", label: "Reports" },
+  {
+    href: "/dashboard/settings",
+    label: "Settings",
+    children: [
+      { href: "/dashboard/team", label: "Team Members" },
+    ],
+  },
 ];
 
 const ROLE_LABEL: Record<string, string> = {

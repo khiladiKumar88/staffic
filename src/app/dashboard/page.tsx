@@ -5,17 +5,68 @@ import { listRequisitionsForOrg } from "@/lib/services/requisitions";
 import { listCandidatesForOrg } from "@/lib/services/candidates";
 import { listSubmissionsForAgency, listSubmissionsForClientOrg } from "@/lib/services/submissions";
 import { getPlacementsByMonth } from "@/lib/services/reports";
-import { StatCard } from "@/components/ui/StatCard";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
 import { BarChart } from "@/components/ui/BarChart";
+
+/* ------------------------------------------------------------------ */
+/*  Section header bar component (HWL-style)                          */
+/* ------------------------------------------------------------------ */
+
+function SectionHeader({
+  title,
+  actionLabel,
+  actionHref,
+}: {
+  title: string;
+  actionLabel?: string;
+  actionHref?: string;
+}) {
+  return (
+    <div className="section-header">
+      <span className="section-header__title">{title}</span>
+      {actionLabel && actionHref && (
+        <Link href={actionHref} className="section-header__action">
+          {actionLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Stat grid item                                                     */
+/* ------------------------------------------------------------------ */
+
+function StatGridItem({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: number | string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="stat-grid__item">
+      <span className="stat-grid__label">{label}</span>
+      <span className={`stat-grid__value ${highlight ? "stat-grid__value--highlight" : ""}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default async function DashboardOverviewPage() {
   const session = await auth();
   const user = session!.user;
   const firstName = user.name.split(" ")[0];
 
+  /* ---- Client dashboard ---- */
   if (isClientRole(user)) {
     const [requisitions, submissions, placementsByMonth] = await Promise.all([
       listRequisitionsForOrg(user),
@@ -23,187 +74,212 @@ export default async function DashboardOverviewPage() {
       getPlacementsByMonth(user),
     ]);
     const open = requisitions.filter((r) => r.status === "OPEN").length;
-    const toReview = submissions.filter((s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW").length;
+    const onHold = requisitions.filter((r) => r.status === "ON_HOLD").length;
+    const filled = requisitions.filter((r) => r.status === "FILLED").length;
+    const toReview = submissions.filter(
+      (s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW",
+    ).length;
+    const approved = submissions.filter((s) => s.status === "APPROVED").length;
     const placements = submissions.filter((s) => s.placement).length;
     const recent = requisitions.slice(0, 5);
 
     return (
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
+        {/* Page heading */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-ink">Good morning, {firstName}</h1>
-            <p className="mt-1 text-sm text-muted">Here&apos;s what&apos;s happening across your organization today.</p>
+            <h1 className="text-xl font-bold text-ink">Dashboard</h1>
+            <p className="mt-0.5 text-sm text-muted">Welcome back, {firstName}</p>
           </div>
           <Link href="/dashboard/requisitions#new-requisition" className={buttonClasses("primary")}>
             + New requisition
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Open requisitions" value={open} />
-          <StatCard
-            label="Submissions to review"
-            value={toReview}
-            delta={toReview > 0 ? `${toReview} awaiting a decision` : undefined}
-            deltaTone={toReview > 0 ? "caution" : "neutral"}
+        {/* Requisition summary section */}
+        <div>
+          <SectionHeader
+            title="Requisition Summary"
+            actionLabel="View all"
+            actionHref="/dashboard/requisitions"
           />
-          <StatCard label="Placements" value={placements} deltaTone="good" />
-          <StatCard label="Total requisitions" value={requisitions.length} />
+          <div className="stat-grid">
+            <StatGridItem label="Open" value={open} highlight={open > 0} />
+            <StatGridItem label="On Hold" value={onHold} />
+            <StatGridItem label="Filled" value={filled} />
+            <StatGridItem label="Total" value={requisitions.length} />
+          </div>
         </div>
 
+        {/* Submissions review section */}
+        <div>
+          <SectionHeader
+            title="Submissions Review"
+            actionLabel="View all"
+            actionHref="/dashboard/submissions"
+          />
+          <div className="stat-grid">
+            <StatGridItem label="Awaiting Review" value={toReview} highlight={toReview > 0} />
+            <StatGridItem label="Approved" value={approved} />
+            <StatGridItem label="Placements" value={placements} />
+            <StatGridItem label="Total" value={submissions.length} />
+          </div>
+        </div>
+
+        {/* Recent requisitions table + chart */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="p-0 lg:col-span-2">
-            <div className="flex items-center justify-between px-5 py-4">
-              <h2 className="text-base font-semibold text-ink">Recent requisitions</h2>
-              <Link href="/dashboard/requisitions" className="text-sm font-medium text-primary hover:underline">
-                View all
-              </Link>
-            </div>
+          <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
+            <SectionHeader title="Recent Requisitions" actionLabel="View all" actionHref="/dashboard/requisitions" />
             {recent.length === 0 ? (
-              <p className="px-5 pb-5 text-sm text-muted">No requisitions yet — post one to get started.</p>
+              <p className="px-5 py-6 text-sm text-muted">No requisitions yet — post one to get started.</p>
             ) : (
-              <div className="overflow-x-auto border-t border-border">
-                <table className="min-w-full divide-y divide-border text-sm">
+              <div className="overflow-x-auto">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Requisition
-                      </th>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Specialty
-                      </th>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Status
-                      </th>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Submissions
-                      </th>
+                      <th>Requisition</th>
+                      <th>Specialty</th>
+                      <th>Status</th>
+                      <th>Submissions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {recent.map((r) => (
-                      <tr key={r.id} className="hover:bg-hover">
-                        <td className="px-5 py-3">
+                      <tr key={r.id}>
+                        <td>
                           <Link href={`/dashboard/requisitions/${r.id}`} className="font-medium text-ink hover:text-primary">
                             {r.title}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 text-muted">{r.specialty.replaceAll("_", " ")}</td>
-                        <td className="px-5 py-3">
-                          <Badge status={r.status} />
-                        </td>
-                        <td className="px-5 py-3 text-ink">{r._count.submissions}</td>
+                        <td className="text-muted">{r.specialty.replaceAll("_", " ")}</td>
+                        <td><Badge status={r.status} /></td>
+                        <td>{r._count.submissions}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </Card>
+          </div>
 
-          <Card>
-            <h2 className="mb-4 text-base font-semibold text-ink">Placements, last 6 months</h2>
+          <div className="rounded-xl border border-border bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-ink">Placements, last 6 months</h2>
             <BarChart data={placementsByMonth.map((r) => ({ label: r.label, count: r.count }))} />
-          </Card>
+          </div>
         </div>
       </div>
     );
   }
 
+  /* ---- Agency dashboard ---- */
   if (isAgencyRole(user)) {
     const [candidates, submissions, placementsByMonth] = await Promise.all([
       listCandidatesForOrg(user),
       listSubmissionsForAgency(user),
       getPlacementsByMonth(user),
     ]);
-    const pending = submissions.filter((s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW").length;
+    const pending = submissions.filter(
+      (s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW",
+    ).length;
+    const approved = submissions.filter((s) => s.status === "APPROVED").length;
     const placements = submissions.filter((s) => s.placement).length;
     const recent = submissions.slice(0, 5);
 
     return (
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-ink">Good morning, {firstName}</h1>
-            <p className="mt-1 text-sm text-muted">Here&apos;s how your submissions are doing today.</p>
+            <h1 className="text-xl font-bold text-ink">Dashboard</h1>
+            <p className="mt-0.5 text-sm text-muted">Welcome back, {firstName}</p>
           </div>
           <Link href="/dashboard/marketplace" className={buttonClasses("primary")}>
             Browse open requisitions
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Candidates" value={candidates.length} />
-          <StatCard
-            label="Submissions pending review"
-            value={pending}
-            deltaTone={pending > 0 ? "caution" : "neutral"}
-          />
-          <StatCard label="Placements" value={placements} deltaTone="good" />
-          <StatCard label="Total submissions" value={submissions.length} />
+        {/* Staff Pool section */}
+        <div>
+          <SectionHeader title="Staff Pool" />
+          <div className="stat-grid">
+            <StatGridItem label="Active Candidates" value={candidates.length} highlight />
+          </div>
         </div>
 
+        {/* Submissions section */}
+        <div>
+          <SectionHeader
+            title="Submission Status"
+            actionLabel="View all"
+            actionHref="/dashboard/submissions"
+          />
+          <div className="stat-grid">
+            <StatGridItem label="Pending Review" value={pending} highlight={pending > 0} />
+            <StatGridItem label="Approved" value={approved} />
+            <StatGridItem label="Placements" value={placements} />
+            <StatGridItem label="Total" value={submissions.length} />
+          </div>
+        </div>
+
+        {/* Recent submissions table + chart */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="p-0 lg:col-span-2">
-            <div className="flex items-center justify-between px-5 py-4">
-              <h2 className="text-base font-semibold text-ink">Recent submissions</h2>
-              <Link href="/dashboard/submissions" className="text-sm font-medium text-primary hover:underline">
-                View all
-              </Link>
-            </div>
+          <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
+            <SectionHeader title="Recent Submissions" actionLabel="View all" actionHref="/dashboard/submissions" />
             {recent.length === 0 ? (
-              <p className="px-5 pb-5 text-sm text-muted">No submissions yet — browse the marketplace to get started.</p>
+              <p className="px-5 py-6 text-sm text-muted">No submissions yet — browse the marketplace to get started.</p>
             ) : (
-              <div className="overflow-x-auto border-t border-border">
-                <table className="min-w-full divide-y divide-border text-sm">
+              <div className="overflow-x-auto">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Candidate
-                      </th>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Requisition
-                      </th>
-                      <th className="px-5 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase">
-                        Status
-                      </th>
+                      <th>Candidate</th>
+                      <th>Requisition</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {recent.map((s) => (
-                      <tr key={s.id} className="hover:bg-hover">
-                        <td className="px-5 py-3 font-medium text-ink">{s.candidate.name}</td>
-                        <td className="px-5 py-3 text-muted">{s.requisition.title}</td>
-                        <td className="px-5 py-3">
-                          <Badge status={s.status} />
-                        </td>
+                      <tr key={s.id}>
+                        <td className="font-medium text-ink">{s.candidate.name}</td>
+                        <td className="text-muted">{s.requisition.title}</td>
+                        <td><Badge status={s.status} /></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </Card>
+          </div>
 
-          <Card>
-            <h2 className="mb-4 text-base font-semibold text-ink">Placements, last 6 months</h2>
+          <div className="rounded-xl border border-border bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-ink">Placements, last 6 months</h2>
             <BarChart data={placementsByMonth.map((r) => ({ label: r.label, count: r.count }))} />
-          </Card>
+          </div>
         </div>
       </div>
     );
   }
 
+  /* ---- Platform admin dashboard ---- */
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink">Welcome, {user.name}</h1>
-      <p className="mt-2 text-sm text-muted">
-        You&apos;re signed in as a platform admin. Client/agency dashboards show org-specific data — see{" "}
-        <Link href="/dashboard/reports" className="font-medium text-primary hover:underline">
-          Reports
-        </Link>{" "}
-        for the platform-wide overview.
-      </p>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-xl font-bold text-ink">Dashboard</h1>
+        <p className="mt-0.5 text-sm text-muted">Welcome back, {user.name}</p>
+      </div>
+      <div>
+        <SectionHeader title="Platform Overview" />
+        <p className="mt-2 text-sm text-muted">
+          See{" "}
+          <Link href="/dashboard/reports" className="font-medium text-primary hover:underline">
+            Reports
+          </Link>{" "}
+          for the platform-wide overview, or review{" "}
+          <Link href="/dashboard/admin/agencies" className="font-medium text-primary hover:underline">
+            Pending Agencies
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }

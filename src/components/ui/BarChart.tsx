@@ -21,7 +21,7 @@ export function BarChart({ data }: { data: { label: string; count: number }[] })
                 className="bar-chart-bar w-full rounded-t-lg transition-all duration-300 ease-out group-hover:opacity-90"
                 style={{
                   height: `${pct}%`,
-                  background: "linear-gradient(to top, #0b5a52, #0f6e64, #14917e)",
+                  background: "linear-gradient(to top, #3730A3, #4338CA, #6366F1)",
                 }}
               />
             </div>
