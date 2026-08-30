@@ -44,29 +44,31 @@ export async function createTimesheet(actor: SessionUser, input: CreateTimesheet
 
   const clientOrgId = placement.submission.requisition.organizationId;
 
-  await logAuditEvent({
-    actor,
-    organizationId: actor.organizationId,
-    action: "TIMESHEET_CREATE",
-    entityType: "Timesheet",
-    entityId: timesheet.id,
-    metadata: { placementId: input.placementId, hoursWorked: input.hoursWorked },
-  });
-  await logAuditEvent({
-    actor,
-    organizationId: clientOrgId,
-    action: "TIMESHEET_CREATE",
-    entityType: "Timesheet",
-    entityId: timesheet.id,
-    metadata: { placementId: input.placementId, hoursWorked: input.hoursWorked },
-  });
-
-  await notifyTimesheetSubmitted({
-    clientOrgId,
-    placementLabel: placementLabel(placement.submission.requisition.title, input.weekStartDate),
-    hoursWorked: input.hoursWorked,
-    weekStartDate: input.weekStartDate,
-  });
+  // P-28: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: actor.organizationId,
+      action: "TIMESHEET_CREATE",
+      entityType: "Timesheet",
+      entityId: timesheet.id,
+      metadata: { placementId: input.placementId, hoursWorked: input.hoursWorked },
+    }),
+    logAuditEvent({
+      actor,
+      organizationId: clientOrgId,
+      action: "TIMESHEET_CREATE",
+      entityType: "Timesheet",
+      entityId: timesheet.id,
+      metadata: { placementId: input.placementId, hoursWorked: input.hoursWorked },
+    }),
+    notifyTimesheetSubmitted({
+      clientOrgId,
+      placementLabel: placementLabel(placement.submission.requisition.title, input.weekStartDate),
+      hoursWorked: input.hoursWorked,
+      weekStartDate: input.weekStartDate,
+    }),
+  ]);
 
   return timesheet;
 }
@@ -87,6 +89,7 @@ export async function listTimesheetsForOrg(actor: SessionUser) {
       },
     },
     orderBy: { weekStartDate: "desc" },
+    take: 200, // P-08: cap to prevent unbounded result sets
     include: {
       placement: {
         include: {
@@ -126,20 +129,22 @@ export async function reviewTimesheet(actor: SessionUser, timesheetId: string, a
     },
   });
 
-  await logAuditEvent({
-    actor,
-    organizationId: clientOrgId,
-    action: "TIMESHEET_STATUS_CHANGE",
-    entityType: "Timesheet",
-    entityId: timesheetId,
-    metadata: { approved },
-  });
-
-  await notifyTimesheetReviewed({
-    agencyOrgId: timesheet.placement.submission.agencyOrgId,
-    placementLabel: placementLabel(timesheet.placement.submission.requisition.title, timesheet.weekStartDate),
-    approved,
-  });
+  // P-28: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: clientOrgId,
+      action: "TIMESHEET_STATUS_CHANGE",
+      entityType: "Timesheet",
+      entityId: timesheetId,
+      metadata: { approved },
+    }),
+    notifyTimesheetReviewed({
+      agencyOrgId: timesheet.placement.submission.agencyOrgId,
+      placementLabel: placementLabel(timesheet.placement.submission.requisition.title, timesheet.weekStartDate),
+      approved,
+    }),
+  ]);
 
   return updated;
 }

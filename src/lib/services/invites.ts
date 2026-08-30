@@ -174,10 +174,11 @@ export async function acceptInvite(input: AcceptInviteInput) {
 
   const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
   if (existingUser) {
-    throw new ForbiddenError("An account with that email already exists — sign in instead");
+    // Generic message to prevent email enumeration (V-14).
+    throw new ForbiddenError("Unable to create account. Please try again or contact support.");
   }
 
-  const passwordHash = await bcrypt.hash(input.password, 10);
+  const passwordHash = await bcrypt.hash(input.password, 12);
 
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({

@@ -1,8 +1,15 @@
-/** Minimal CSV serializer — no external dependency needed for this scale. */
+/** Minimal CSV serializer with injection protection. */
 export function toCsv(rows: Record<string, unknown>[], columns: string[]): string {
   const escape = (value: unknown): string => {
     if (value === null || value === undefined) return "";
-    const s = String(value);
+    let s = String(value);
+
+    // CSV injection protection: prefix dangerous leading characters
+    // that Excel/LibreOffice interpret as formulas (V-10).
+    if (/^[=+\-@\t\r]/.test(s)) {
+      s = "'" + s;
+    }
+
     if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
   };

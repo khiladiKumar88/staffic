@@ -45,6 +45,7 @@ export async function listRequisitionsForOrg(actor: SessionUser) {
   return prisma.requisition.findMany({
     where: { organizationId: actor.organizationId },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-02: cap to prevent unbounded result sets
     include: { _count: { select: { submissions: true } } },
   });
 }
@@ -58,6 +59,7 @@ export async function listOpenRequisitions(actor: SessionUser) {
   return prisma.requisition.findMany({
     where: { status: "OPEN" },
     orderBy: { createdAt: "desc" },
+    take: 100, // P-03: cap marketplace to prevent unbounded platform-wide scan
     include: {
       organization: { select: { id: true, name: true } },
       _count: { select: { submissions: true } },

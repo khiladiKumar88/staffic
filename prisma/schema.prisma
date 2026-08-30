@@ -242,6 +242,7 @@ model Submission {
 
   @@index([requisitionId])
   @@index([agencyOrgId])
+  @@index([candidateId])
   @@index([status])
   @@map("submissions")
 }
@@ -328,6 +329,7 @@ model Timesheet {
   @@unique([placementId, weekStartDate])
   @@index([placementId])
   @@index([invoiceId])
+  @@index([status])
   @@map("timesheets")
 }
 
@@ -443,6 +445,8 @@ model JobApplication {
   updatedAt      DateTime             @updatedAt
 
   @@index([jobId])
+  @@index([applicantEmail, jobId])
+  @@index([ipAddress])
   @@map("job_applications")
 }
 

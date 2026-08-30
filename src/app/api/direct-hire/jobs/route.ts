@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { createDirectHireJob, listDirectHireJobsForOrg } from "@/lib/services/directHire";
 
 const createJobSchema = z.object({
@@ -24,10 +24,7 @@ export async function GET() {
     const jobs = await listDirectHireJobsForOrg(session.user);
     return NextResponse.json({ jobs });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -47,9 +44,6 @@ export async function POST(request: Request) {
     const job = await createDirectHireJob(session.user, parsed.data);
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { sendInvoice, markInvoicePaid } from "@/lib/services/invoices";
 
 const patchSchema = z.object({ action: z.enum(["send", "mark_paid"]) });
@@ -29,9 +29,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         : await markInvoicePaid(session.user, id);
     return NextResponse.json({ invoice });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

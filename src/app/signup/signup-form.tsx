@@ -60,7 +60,8 @@ export function SignupForm() {
         <label htmlFor="userPassword" className="text-sm font-medium text-ink">
           Password
         </label>
-        <input id="userPassword" name="userPassword" type="password" required minLength={8} className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+        <input id="userPassword" name="userPassword" type="password" required minLength={12} className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+        <p className="mt-1 text-xs text-muted">Min 12 chars, with uppercase, lowercase, digit, and special character.</p>
       </div>
 
       {errorMessage && <p className="text-sm text-status-red">{errorMessage}</p>}

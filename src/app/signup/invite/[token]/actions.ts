@@ -5,11 +5,12 @@ import { z } from "zod";
 import { signIn } from "@/auth";
 import { ForbiddenError } from "@/lib/rbac";
 import { acceptInvite, getInviteByToken } from "@/lib/services/invites";
+import { passwordSchema } from "@/lib/password";
 
 const acceptSchema = z.object({
   token: z.string().min(1),
   name: z.string().min(2, "Your name is too short"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
 });
 
 export async function acceptInviteAction(

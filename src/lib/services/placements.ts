@@ -43,22 +43,24 @@ export async function createPlacement(actor: SessionUser, input: CreatePlacement
     return created;
   });
 
-  await logAuditEvent({
-    actor,
-    organizationId: submission.requisition.organizationId,
-    action: "PLACEMENT_CREATE",
-    entityType: "Placement",
-    entityId: placement.id,
-    metadata: { submissionId: input.submissionId },
-  });
-
-  await notifyPlacementCreated({
-    clientOrgId: submission.requisition.organizationId,
-    agencyOrgId: submission.agencyOrgId,
-    requisitionTitle: submission.requisition.title,
-    candidateName: submission.candidate.name,
-    startDate: input.startDate,
-  });
+  // P-29: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: submission.requisition.organizationId,
+      action: "PLACEMENT_CREATE",
+      entityType: "Placement",
+      entityId: placement.id,
+      metadata: { submissionId: input.submissionId },
+    }),
+    notifyPlacementCreated({
+      clientOrgId: submission.requisition.organizationId,
+      agencyOrgId: submission.agencyOrgId,
+      requisitionTitle: submission.requisition.title,
+      candidateName: submission.candidate.name,
+      startDate: input.startDate,
+    }),
+  ]);
 
   return placement;
 }
@@ -71,6 +73,7 @@ export async function listPlacementsForAgency(actor: SessionUser) {
   return prisma.placement.findMany({
     where: { submission: { agencyOrgId: actor.organizationId } },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-12: cap to prevent unbounded result sets
     include: { submission: { include: { requisition: { select: { title: true } }, candidate: { select: { name: true } } } } },
   });
 }

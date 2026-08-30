@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { createFloatPoolAssignment, listFloatPoolAssignments } from "@/lib/services/floatPool";
 
 const createAssignmentSchema = z.object({
@@ -23,10 +23,7 @@ export async function GET() {
     const assignments = await listFloatPoolAssignments(session.user);
     return NextResponse.json({ assignments });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -50,9 +47,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ assignment }, { status: 201 });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

@@ -81,20 +81,22 @@ export async function sendInvoice(actor: SessionUser, invoiceId: string) {
 
   const updated = await prisma.invoice.update({ where: { id: invoiceId }, data: { status: "SENT" } });
 
-  await logAuditEvent({
-    actor,
-    organizationId: invoice.agencyOrgId,
-    action: "INVOICE_STATUS_CHANGE",
-    entityType: "Invoice",
-    entityId: invoiceId,
-    metadata: { from: "DRAFT", to: "SENT" },
-  });
-
-  await notifyInvoiceSent({
-    clientOrgId: invoice.clientOrgId,
-    placementLabel: invoice.placement.submission.requisition.title,
-    totalAmount: Number(invoice.totalAmount),
-  });
+  // P-30: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: invoice.agencyOrgId,
+      action: "INVOICE_STATUS_CHANGE",
+      entityType: "Invoice",
+      entityId: invoiceId,
+      metadata: { from: "DRAFT", to: "SENT" },
+    }),
+    notifyInvoiceSent({
+      clientOrgId: invoice.clientOrgId,
+      placementLabel: invoice.placement.submission.requisition.title,
+      totalAmount: Number(invoice.totalAmount),
+    }),
+  ]);
 
   return updated;
 }
@@ -113,20 +115,22 @@ export async function markInvoicePaid(actor: SessionUser, invoiceId: string) {
 
   const updated = await prisma.invoice.update({ where: { id: invoiceId }, data: { status: "PAID" } });
 
-  await logAuditEvent({
-    actor,
-    organizationId: invoice.clientOrgId,
-    action: "INVOICE_STATUS_CHANGE",
-    entityType: "Invoice",
-    entityId: invoiceId,
-    metadata: { from: "SENT", to: "PAID" },
-  });
-
-  await notifyInvoicePaid({
-    agencyOrgId: invoice.agencyOrgId,
-    placementLabel: invoice.placement.submission.requisition.title,
-    totalAmount: Number(invoice.totalAmount),
-  });
+  // P-31: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: invoice.clientOrgId,
+      action: "INVOICE_STATUS_CHANGE",
+      entityType: "Invoice",
+      entityId: invoiceId,
+      metadata: { from: "SENT", to: "PAID" },
+    }),
+    notifyInvoicePaid({
+      agencyOrgId: invoice.agencyOrgId,
+      placementLabel: invoice.placement.submission.requisition.title,
+      totalAmount: Number(invoice.totalAmount),
+    }),
+  ]);
 
   return updated;
 }
@@ -138,6 +142,7 @@ export async function listInvoicesForOrg(actor: SessionUser) {
   return prisma.invoice.findMany({
     where: { OR: [{ agencyOrgId: actor.organizationId }, { clientOrgId: actor.organizationId }] },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-09: cap to prevent unbounded result sets
     include: {
       placement: { include: { submission: { include: { requisition: { select: { title: true } } } } } },
       clientOrg: { select: { name: true } },

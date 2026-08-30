@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { createPlacement } from "@/lib/services/placements";
 
 const createPlacementSchema = z.object({
@@ -35,9 +35,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ placement }, { status: 201 });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

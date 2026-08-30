@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { generateInvoice, listInvoicesForOrg } from "@/lib/services/invoices";
 
 const generateInvoiceSchema = z.object({ placementId: z.string().min(1) });
@@ -17,10 +17,7 @@ export async function GET() {
     const invoices = await listInvoicesForOrg(session.user);
     return NextResponse.json({ invoices });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -42,9 +39,6 @@ export async function POST(request: Request) {
     const invoice = await generateInvoice(session.user, parsed.data.placementId);
     return NextResponse.json({ invoice }, { status: 201 });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

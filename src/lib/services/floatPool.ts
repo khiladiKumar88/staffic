@@ -43,6 +43,7 @@ export async function listFloatPoolWorkers(actor: SessionUser) {
   return prisma.floatPoolWorker.findMany({
     where: { organizationId: actor.organizationId },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-06: cap to prevent unbounded result sets
   });
 }
 
@@ -102,7 +103,8 @@ export async function listFloatPoolAssignments(actor: SessionUser) {
   return prisma.floatPoolAssignment.findMany({
     where: { organizationId: actor.organizationId },
     orderBy: { startDate: "asc" },
-    include: { worker: true },
+    take: 200, // P-07: cap to prevent unbounded result sets
+    include: { worker: { select: { id: true, name: true, specialty: true } } }, // P-19: only fields the UI needs
   });
 }
 

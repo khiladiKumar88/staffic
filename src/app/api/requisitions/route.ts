@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { createRequisition, listRequisitionsForOrg } from "@/lib/services/requisitions";
 
 const createRequisitionSchema = z.object({
@@ -27,10 +27,7 @@ export async function GET() {
     const requisitions = await listRequisitionsForOrg(session.user);
     return NextResponse.json({ requisitions });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -54,9 +51,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ requisition }, { status: 201 });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

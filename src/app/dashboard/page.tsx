@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { isClientRole, isAgencyRole } from "@/lib/rbac";
-import { listRequisitionsForOrg } from "@/lib/services/requisitions";
-import { listCandidatesForOrg } from "@/lib/services/candidates";
-import { listSubmissionsForAgency, listSubmissionsForClientOrg } from "@/lib/services/submissions";
 import { getPlacementsByMonth } from "@/lib/services/reports";
+import { getDashboardCounts } from "@/lib/services/dashboard";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
 import { BarChart } from "@/components/ui/BarChart";
@@ -68,20 +66,12 @@ export default async function DashboardOverviewPage() {
 
   /* ---- Client dashboard ---- */
   if (isClientRole(user)) {
-    const [requisitions, submissions, placementsByMonth] = await Promise.all([
-      listRequisitionsForOrg(user),
-      listSubmissionsForClientOrg(user),
+    const [data, placementsByMonth] = await Promise.all([
+      getDashboardCounts(user),
       getPlacementsByMonth(user),
     ]);
-    const open = requisitions.filter((r) => r.status === "OPEN").length;
-    const onHold = requisitions.filter((r) => r.status === "ON_HOLD").length;
-    const filled = requisitions.filter((r) => r.status === "FILLED").length;
-    const toReview = submissions.filter(
-      (s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW",
-    ).length;
-    const approved = submissions.filter((s) => s.status === "APPROVED").length;
-    const placements = submissions.filter((s) => s.placement).length;
-    const recent = requisitions.slice(0, 5);
+    if (!data || data.type !== "client") throw new Error("Unexpected dashboard data");
+    const { reqOpen, reqOnHold, reqFilled, reqTotal, subToReview, subApproved, subPlacements, subTotal, recentRequisitions } = data;
 
     return (
       <div className="flex flex-col gap-6">
@@ -104,10 +94,10 @@ export default async function DashboardOverviewPage() {
             actionHref="/dashboard/requisitions"
           />
           <div className="stat-grid">
-            <StatGridItem label="Open" value={open} highlight={open > 0} />
-            <StatGridItem label="On Hold" value={onHold} />
-            <StatGridItem label="Filled" value={filled} />
-            <StatGridItem label="Total" value={requisitions.length} />
+            <StatGridItem label="Open" value={reqOpen} highlight={reqOpen > 0} />
+            <StatGridItem label="On Hold" value={reqOnHold} />
+            <StatGridItem label="Filled" value={reqFilled} />
+            <StatGridItem label="Total" value={reqTotal} />
           </div>
         </div>
 
@@ -119,10 +109,10 @@ export default async function DashboardOverviewPage() {
             actionHref="/dashboard/submissions"
           />
           <div className="stat-grid">
-            <StatGridItem label="Awaiting Review" value={toReview} highlight={toReview > 0} />
-            <StatGridItem label="Approved" value={approved} />
-            <StatGridItem label="Placements" value={placements} />
-            <StatGridItem label="Total" value={submissions.length} />
+            <StatGridItem label="Awaiting Review" value={subToReview} highlight={subToReview > 0} />
+            <StatGridItem label="Approved" value={subApproved} />
+            <StatGridItem label="Placements" value={subPlacements} />
+            <StatGridItem label="Total" value={subTotal} />
           </div>
         </div>
 
@@ -130,7 +120,7 @@ export default async function DashboardOverviewPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
             <SectionHeader title="Recent Requisitions" actionLabel="View all" actionHref="/dashboard/requisitions" />
-            {recent.length === 0 ? (
+            {recentRequisitions.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted">No requisitions yet — post one to get started.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -144,7 +134,7 @@ export default async function DashboardOverviewPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recent.map((r) => (
+                    {recentRequisitions.map((r) => (
                       <tr key={r.id}>
                         <td>
                           <Link href={`/dashboard/requisitions/${r.id}`} className="font-medium text-ink hover:text-primary">
@@ -173,17 +163,12 @@ export default async function DashboardOverviewPage() {
 
   /* ---- Agency dashboard ---- */
   if (isAgencyRole(user)) {
-    const [candidates, submissions, placementsByMonth] = await Promise.all([
-      listCandidatesForOrg(user),
-      listSubmissionsForAgency(user),
+    const [data, placementsByMonth] = await Promise.all([
+      getDashboardCounts(user),
       getPlacementsByMonth(user),
     ]);
-    const pending = submissions.filter(
-      (s) => s.status === "SUBMITTED" || s.status === "UNDER_REVIEW",
-    ).length;
-    const approved = submissions.filter((s) => s.status === "APPROVED").length;
-    const placements = submissions.filter((s) => s.placement).length;
-    const recent = submissions.slice(0, 5);
+    if (!data || data.type !== "agency") throw new Error("Unexpected dashboard data");
+    const { candidateCount, subPending, subApproved, subPlacements, subTotal, recentSubmissions } = data;
 
     return (
       <div className="flex flex-col gap-6">
@@ -201,7 +186,7 @@ export default async function DashboardOverviewPage() {
         <div>
           <SectionHeader title="Staff Pool" />
           <div className="stat-grid">
-            <StatGridItem label="Active Candidates" value={candidates.length} highlight />
+            <StatGridItem label="Active Candidates" value={candidateCount} highlight />
           </div>
         </div>
 
@@ -213,10 +198,10 @@ export default async function DashboardOverviewPage() {
             actionHref="/dashboard/submissions"
           />
           <div className="stat-grid">
-            <StatGridItem label="Pending Review" value={pending} highlight={pending > 0} />
-            <StatGridItem label="Approved" value={approved} />
-            <StatGridItem label="Placements" value={placements} />
-            <StatGridItem label="Total" value={submissions.length} />
+            <StatGridItem label="Pending Review" value={subPending} highlight={subPending > 0} />
+            <StatGridItem label="Approved" value={subApproved} />
+            <StatGridItem label="Placements" value={subPlacements} />
+            <StatGridItem label="Total" value={subTotal} />
           </div>
         </div>
 
@@ -224,7 +209,7 @@ export default async function DashboardOverviewPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
             <SectionHeader title="Recent Submissions" actionLabel="View all" actionHref="/dashboard/submissions" />
-            {recent.length === 0 ? (
+            {recentSubmissions.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted">No submissions yet — browse the marketplace to get started.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -237,7 +222,7 @@ export default async function DashboardOverviewPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recent.map((s) => (
+                    {recentSubmissions.map((s) => (
                       <tr key={s.id}>
                         <td className="font-medium text-ink">{s.candidate.name}</td>
                         <td className="text-muted">{s.requisition.title}</td>

@@ -6,10 +6,12 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
+import { passwordSchema } from "@/lib/password";
+import { rateLimit } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: passwordSchema,
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -26,11 +28,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
         const { email, password } = parsed.data;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        // Rate-limit login attempts per email — 5 tries per 15 min, then
+        // 15-minute lockout (V-05 / V-20).
+        const rl = rateLimit(`login:${email}`, 5, 15 * 60 * 1000, 15 * 60 * 1000);
+        if (!rl.allowed) return null;
 
-        const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatches) return null;
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        // Always run bcrypt.compare even if user not found — prevents
+        // timing-based email enumeration (V-13).
+        const hash = user?.passwordHash ?? "$2a$12$fakehashfakehashfakehashfakehashfakehashfakehashfake";
+        const passwordMatches = await bcrypt.compare(password, hash);
+        if (!user || !passwordMatches) return null;
 
         // Shape returned here is what auth.config.ts's jwt() callback receives as `user`.
         return {

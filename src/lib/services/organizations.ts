@@ -24,10 +24,11 @@ export interface RegisterOrganizationInput {
 export async function registerOrganization(input: RegisterOrganizationInput) {
   const existingUser = await prisma.user.findUnique({ where: { email: input.userEmail } });
   if (existingUser) {
-    throw new ForbiddenError("An account with that email already exists");
+    // Generic message to prevent email enumeration (V-14).
+    throw new ForbiddenError("Unable to create account. Please try again or contact support.");
   }
 
-  const passwordHash = await bcrypt.hash(input.userPassword, 10);
+  const passwordHash = await bcrypt.hash(input.userPassword, 12);
 
   const { organization, user } = await prisma.$transaction(async (tx) => {
     const organization = await tx.organization.create({

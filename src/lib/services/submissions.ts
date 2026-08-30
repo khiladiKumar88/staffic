@@ -89,11 +89,12 @@ export async function listSubmissionsForClientOrg(actor: SessionUser) {
   return prisma.submission.findMany({
     where: { requisition: { organizationId: actor.organizationId } },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-04: cap to prevent unbounded result sets
     include: {
-      candidate: true,
+      candidate: { select: { id: true, name: true } }, // P-17: only fields the UI needs
       requisition: { select: { title: true, specialty: true } },
       agencyOrg: { select: { name: true } },
-      placement: true,
+      placement: { select: { id: true, startDate: true, status: true, actualRate: true } },
     },
   });
 }
@@ -106,10 +107,11 @@ export async function listSubmissionsForAgency(actor: SessionUser) {
   return prisma.submission.findMany({
     where: { agencyOrgId: actor.organizationId },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-05: cap to prevent unbounded result sets
     include: {
-      candidate: true,
-      requisition: { include: { organization: { select: { name: true } } } },
-      placement: true,
+      candidate: { select: { id: true, name: true } }, // P-18: only fields the UI needs
+      requisition: { select: { title: true, organization: { select: { name: true } } } },
+      placement: { select: { id: true, startDate: true, status: true } },
     },
   });
 }
@@ -156,31 +158,31 @@ export async function updateSubmissionStatus(
     data: { status, reviewedById: actor.id, reviewedAt: new Date() },
   });
 
-  await logAuditEvent({
-    actor,
-    organizationId: submission.requisition.organizationId,
-    action: "SUBMISSION_STATUS_CHANGE",
-    entityType: "Submission",
-    entityId: submissionId,
-    metadata: { from: submission.status, to: status },
-  });
-
-  // Mirror into the agency's audit trail too — it's their data changing state.
-  await logAuditEvent({
-    actor,
-    organizationId: submission.agencyOrgId,
-    action: "SUBMISSION_STATUS_CHANGE",
-    entityType: "Submission",
-    entityId: submissionId,
-    metadata: { from: submission.status, to: status },
-  });
-
-  await notifySubmissionStatusChange({
-    agencyOrgId: submission.agencyOrgId,
-    requisitionTitle: submission.requisition.title,
-    candidateName: submission.candidate.name,
-    status,
-  });
+  // P-27: Run independent side-effects in parallel.
+  await Promise.all([
+    logAuditEvent({
+      actor,
+      organizationId: submission.requisition.organizationId,
+      action: "SUBMISSION_STATUS_CHANGE",
+      entityType: "Submission",
+      entityId: submissionId,
+      metadata: { from: submission.status, to: status },
+    }),
+    logAuditEvent({
+      actor,
+      organizationId: submission.agencyOrgId,
+      action: "SUBMISSION_STATUS_CHANGE",
+      entityType: "Submission",
+      entityId: submissionId,
+      metadata: { from: submission.status, to: status },
+    }),
+    notifySubmissionStatusChange({
+      agencyOrgId: submission.agencyOrgId,
+      requisitionTitle: submission.requisition.title,
+      candidateName: submission.candidate.name,
+      status,
+    }),
+  ]);
 
   return updated;
 }

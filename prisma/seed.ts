@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const DEMO_PASSWORD = "password123"; // local dev only — never use in a real environment
 
 async function main() {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
 
   const platformOrg = await prisma.organization.create({
     data: { name: "Staffic Internal", type: "PLATFORM" },

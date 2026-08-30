@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { updateSubmissionStatus } from "@/lib/services/submissions";
 
 const updateStatusSchema = z.object({
@@ -28,9 +28,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const submission = await updateSubmissionStatus(session.user, id, parsed.data.status);
     return NextResponse.json({ submission });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

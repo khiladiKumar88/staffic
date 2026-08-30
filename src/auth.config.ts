@@ -17,9 +17,24 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const isProtected = request.nextUrl.pathname.startsWith("/dashboard") ||
-        request.nextUrl.pathname.startsWith("/api/requisitions") ||
-        request.nextUrl.pathname.startsWith("/api/submissions");
+      const { pathname } = request.nextUrl;
+
+      // Public routes that don't require authentication
+      const isPublic =
+        pathname === "/login" ||
+        pathname === "/signup" ||
+        pathname.startsWith("/signup/invite/") ||
+        pathname.startsWith("/api/public/") ||
+        pathname.startsWith("/api/auth/") ||
+        pathname === "/jobs" ||
+        pathname.startsWith("/jobs/");
+
+      if (isPublic) return true;
+
+      // Everything under /dashboard and /api requires auth
+      const isProtected =
+        pathname.startsWith("/dashboard") ||
+        pathname.startsWith("/api/");
 
       if (isProtected && !isLoggedIn) return false;
       return true;

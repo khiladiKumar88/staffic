@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ForbiddenError } from "@/lib/rbac";
+import { handleApiError } from "@/lib/api-utils";
 import { listOpenRequisitions } from "@/lib/services/requisitions";
 
 // GET /api/requisitions/open — the agency-facing marketplace: every OPEN
@@ -16,9 +16,6 @@ export async function GET() {
     const requisitions = await listOpenRequisitions(session.user);
     return NextResponse.json({ requisitions });
   } catch (error) {
-    if (error instanceof ForbiddenError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

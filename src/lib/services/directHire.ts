@@ -43,6 +43,7 @@ export async function listDirectHireJobsForOrg(actor: SessionUser) {
   return prisma.directHireJob.findMany({
     where: { organizationId: actor.organizationId },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-10: cap to prevent unbounded result sets
     include: { _count: { select: { applications: true } } },
   });
 }
@@ -113,6 +114,7 @@ export async function listPublicOpenJobs() {
   return prisma.directHireJob.findMany({
     where: { status: "OPEN" },
     orderBy: { createdAt: "desc" },
+    take: 50, // P-11: cap public endpoint to prevent DoS at scale
     select: {
       id: true,
       title: true,

@@ -34,5 +34,7 @@ export async function listCandidatesForOrg(actor: SessionUser) {
   return prisma.candidate.findMany({
     where: { organizationId: actor.organizationId },
     orderBy: { createdAt: "desc" },
+    take: 200, // P-01: cap to prevent unbounded result sets
+    select: { id: true, name: true, email: true, credentials: true, createdAt: true, updatedAt: true, organizationId: true }, // P-16: only list-view fields
   });
 }

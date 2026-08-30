@@ -3,6 +3,16 @@ import { sendEmailSafely } from "@/lib/email";
 
 const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
+/** Escape user-supplied text before interpolating into HTML emails (V-17). */
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function wrapper(bodyHtml: string): string {
   return `<div style="font-family: sans-serif; font-size: 14px; color: #18181b; line-height: 1.5;">${bodyHtml}<p style="margin-top: 24px; color: #71717a; font-size: 12px;">Staffic — healthcare workforce management</p></div>`;
 }
@@ -36,7 +46,7 @@ export async function notifyNewSubmission(params: {
     to: params.requisitionCreatorEmail,
     subject: `New submission for "${params.requisitionTitle}"`,
     html: wrapper(
-      `<p><strong>${params.agencyName}</strong> submitted <strong>${params.candidateName}</strong> for your requisition "${params.requisitionTitle}" at $${params.proposedRate}/hr.</p>` +
+      `<p><strong>${esc(params.agencyName)}</strong> submitted <strong>${esc(params.candidateName)}</strong> for your requisition "${esc(params.requisitionTitle)}" at $${params.proposedRate}/hr.</p>` +
         `<p><a href="${APP_URL}/dashboard/requisitions/${params.requisitionId}">Review this submission</a></p>`,
     ),
   });
@@ -54,9 +64,9 @@ export async function notifySubmissionStatusChange(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `${params.candidateName}'s submission was ${params.status.replace("_", " ").toLowerCase()}`,
+        subject: `${esc(params.candidateName)}'s submission was ${params.status.replace("_", " ").toLowerCase()}`,
         html: wrapper(
-          `<p>Your submission of <strong>${params.candidateName}</strong> for "${params.requisitionTitle}" is now <strong>${params.status.replace("_", " ")}</strong>.</p>` +
+          `<p>Your submission of <strong>${esc(params.candidateName)}</strong> for "${esc(params.requisitionTitle)}" is now <strong>${esc(params.status.replace("_", " "))}</strong>.</p>` +
             `<p><a href="${APP_URL}/dashboard/submissions">View your submissions</a></p>`,
         ),
       }),
@@ -78,12 +88,12 @@ export async function notifyPlacementCreated(params: {
   ]);
 
   const html = wrapper(
-    `<p><strong>${params.candidateName}</strong> is confirmed for "${params.requisitionTitle}", starting ${params.startDate.toLocaleDateString()}.</p>`,
+    `<p><strong>${esc(params.candidateName)}</strong> is confirmed for "${esc(params.requisitionTitle)}", starting ${params.startDate.toLocaleDateString()}.</p>`,
   );
 
   await Promise.all(
     [...clientEmails, ...agencyEmails].map((to) =>
-      sendEmailSafely({ to, subject: `Placement confirmed: ${params.requisitionTitle}`, html }),
+      sendEmailSafely({ to, subject: `Placement confirmed: ${esc(params.requisitionTitle)}`, html }),
     ),
   );
 }
@@ -95,9 +105,9 @@ export async function notifyNewAgencySignup(params: { agencyOrgName: string; age
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `New agency awaiting approval: ${params.agencyOrgName}`,
+        subject: `New agency awaiting approval: ${esc(params.agencyOrgName)}`,
         html: wrapper(
-          `<p><strong>${params.agencyOrgName}</strong> just signed up and is pending approval before they can access the marketplace.</p>` +
+          `<p><strong>${esc(params.agencyOrgName)}</strong> just signed up and is pending approval before they can access the marketplace.</p>` +
             `<p><a href="${APP_URL}/dashboard/admin/agencies">Review pending agencies</a></p>`,
         ),
       }),
@@ -117,9 +127,9 @@ export async function notifyTimesheetSubmitted(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `Timesheet submitted for ${params.placementLabel}`,
+        subject: `Timesheet submitted for ${esc(params.placementLabel)}`,
         html: wrapper(
-          `<p>${params.hoursWorked} hours submitted for the week of ${params.weekStartDate.toLocaleDateString()} (${params.placementLabel}).</p>` +
+          `<p>${params.hoursWorked} hours submitted for the week of ${params.weekStartDate.toLocaleDateString()} (${esc(params.placementLabel)}).</p>` +
             `<p><a href="${APP_URL}/dashboard/timesheets">Review timesheets</a></p>`,
         ),
       }),
@@ -138,8 +148,8 @@ export async function notifyTimesheetReviewed(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `Timesheet ${params.approved ? "approved" : "rejected"} — ${params.placementLabel}`,
-        html: wrapper(`<p>Your timesheet for ${params.placementLabel} was ${params.approved ? "approved" : "rejected"}.</p>`),
+        subject: `Timesheet ${params.approved ? "approved" : "rejected"} — ${esc(params.placementLabel)}`,
+        html: wrapper(`<p>Your timesheet for ${esc(params.placementLabel)} was ${params.approved ? "approved" : "rejected"}.</p>`),
       }),
     ),
   );
@@ -156,9 +166,9 @@ export async function notifyInvoiceSent(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `New invoice: ${params.placementLabel} — $${params.totalAmount.toFixed(2)}`,
+        subject: `New invoice: ${esc(params.placementLabel)} — $${params.totalAmount.toFixed(2)}`,
         html: wrapper(
-          `<p>An invoice for $${params.totalAmount.toFixed(2)} is ready for ${params.placementLabel}.</p>` +
+          `<p>An invoice for $${params.totalAmount.toFixed(2)} is ready for ${esc(params.placementLabel)}.</p>` +
             `<p><a href="${APP_URL}/dashboard/invoices">View invoices</a></p>`,
         ),
       }),
@@ -177,8 +187,8 @@ export async function notifyInvoicePaid(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `Invoice paid: ${params.placementLabel}`,
-        html: wrapper(`<p>Payment of $${params.totalAmount.toFixed(2)} for ${params.placementLabel} has been marked paid.</p>`),
+        subject: `Invoice paid: ${esc(params.placementLabel)}`,
+        html: wrapper(`<p>Payment of $${params.totalAmount.toFixed(2)} for ${esc(params.placementLabel)} has been marked paid.</p>`),
       }),
     ),
   );
@@ -195,9 +205,9 @@ export async function notifyNewJobApplication(params: {
     recipients.map((to) =>
       sendEmailSafely({
         to,
-        subject: `New application: ${params.jobTitle}`,
+        subject: `New application: ${esc(params.jobTitle)}`,
         html: wrapper(
-          `<p><strong>${params.applicantName}</strong> applied to "${params.jobTitle}".</p>` +
+          `<p><strong>${esc(params.applicantName)}</strong> applied to "${esc(params.jobTitle)}".</p>` +
             `<p><a href="${APP_URL}/dashboard/direct-hire">Review applications</a></p>`,
         ),
       }),
@@ -214,9 +224,9 @@ export async function notifyTeamInvite(params: {
 }): Promise<void> {
   await sendEmailSafely({
     to: params.toEmail,
-    subject: `${params.inviterName} invited you to join ${params.orgName} on Staffic`,
+    subject: `${esc(params.inviterName)} invited you to join ${esc(params.orgName)} on Staffic`,
     html: wrapper(
-      `<p><strong>${params.inviterName}</strong> invited you to join <strong>${params.orgName}</strong> on Staffic.</p>` +
+      `<p><strong>${esc(params.inviterName)}</strong> invited you to join <strong>${esc(params.orgName)}</strong> on Staffic.</p>` +
         `<p><a href="${APP_URL}/signup/invite/${params.token}">Accept your invite</a></p>` +
         `<p style="color: #71717a; font-size: 12px;">This link expires in 7 days. If you weren't expecting this, you can ignore it.</p>`,
     ),
@@ -231,7 +241,7 @@ export async function notifyAgencyApprovalDecision(params: {
 }): Promise<void> {
   const recipients = await emailsForOrg(params.agencyOrgId);
   const html = params.approved
-    ? wrapper(`<p>Good news — <strong>${params.agencyOrgName}</strong> has been approved. You can now browse the open-requisition marketplace and submit candidates.</p><p><a href="${APP_URL}/dashboard/marketplace">Go to the marketplace</a></p>`)
+    ? wrapper(`<p>Good news — <strong>${esc(params.agencyOrgName)}</strong> has been approved. You can now browse the open-requisition marketplace and submit candidates.</p><p><a href="${APP_URL}/dashboard/marketplace">Go to the marketplace</a></p>`)
     : wrapper(`<p>Your organization's application was not approved at this time. Contact Staffic support if you have questions.</p>`);
 
   await Promise.all(
