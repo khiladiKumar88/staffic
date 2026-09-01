@@ -110,8 +110,8 @@ export async function listSubmissionsForAgency(actor: SessionUser) {
     take: 200, // P-05: cap to prevent unbounded result sets
     include: {
       candidate: { select: { id: true, name: true } }, // P-18: only fields the UI needs
-      requisition: { select: { title: true, organization: { select: { name: true } } } },
-      placement: { select: { id: true, startDate: true, status: true } },
+      requisition: { select: { title: true, specialty: true, organization: { select: { name: true } } } },
+      placement: { select: { id: true, startDate: true, status: true, actualRate: true } },
     },
   });
 }
