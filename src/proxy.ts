@@ -17,5 +17,8 @@ import { authConfig } from "@/auth.config";
 export default NextAuth(authConfig).auth;
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/requisitions/:path*", "/api/submissions/:path*"],
+  // V-03/V-04: protect all dashboard and API routes at the edge/proxy layer,
+  // not just requisitions/submissions — every /api/* route needs a session
+  // (public routes are excluded via auth.config.ts's authorized callback).
+  matcher: ["/dashboard/:path*", "/api/:path*"],
 };
