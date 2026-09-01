@@ -6,12 +6,18 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
-import { passwordSchema } from "@/lib/password";
 import { rateLimit } from "@/lib/rate-limit";
 
+// Login only needs "is this a non-empty string" — the 12-char/complexity
+// policy (passwordSchema in lib/password.ts) applies when a password is
+// being *created* (signup/invite accept), not when an existing account
+// (including pre-policy seed accounts) is signing in. Enforcing the new
+// policy here would lock out every account created before this rule
+// existed, and would reject correct passwords before they ever reach the
+// database/bcrypt check.
 const credentialsSchema = z.object({
   email: z.string().email(),
-  password: passwordSchema,
+  password: z.string().min(1),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
