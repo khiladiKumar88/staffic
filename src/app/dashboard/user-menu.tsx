@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOutAction } from "@/lib/actions/sign-out";
 
 /**
  * Avatar + name/role + dropdown chevron, matching the mockup's header
@@ -50,13 +50,14 @@ export function UserMenu({ name, role, initials }: { name: string; role: string;
 
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-border bg-white py-1 shadow-lg">
-          <button
-            type="button"
-            onClick={() => signOut({ redirectTo: "/login" })}
-            className="block w-full px-3 py-2 text-left text-sm font-medium text-ink hover:bg-hover"
-          >
-            Sign out
-          </button>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="block w-full px-3 py-2 text-left text-sm font-medium text-ink hover:bg-hover"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
       )}
     </div>
