@@ -154,20 +154,9 @@ export function Sidebar({
   onToggle,
 }: SidebarProps) {
   const pathname = usePathname();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close user dropdown on outside click
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
-        setUserMenuOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -321,13 +310,10 @@ export function Sidebar({
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
-      {/* User area at bottom */}
-      <div ref={userMenuRef} className="sidebar__user-area">
-        <button
-          type="button"
-          onClick={() => setUserMenuOpen((v) => !v)}
-          className="sidebar__user-btn"
-        >
+      {/* User area at bottom — sign out is always visible, no click-to-open
+          dropdown, so there's no toggle state that can fail to fire. */}
+      <div ref={userMenuRef} className="sidebar__user-area sidebar__user-area--static">
+        <div className="sidebar__user-btn">
           <div className="sidebar__avatar">{userInitials}</div>
           {!collapsed && (
             <div className="sidebar__user-info">
@@ -335,34 +321,18 @@ export function Sidebar({
               <span className="sidebar__user-role">{userRole}</span>
             </div>
           )}
-          {!collapsed && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              className="sidebar__chevron"
-              style={{ transform: userMenuOpen ? "rotate(180deg)" : undefined }}>
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
+        </div>
 
-        {userMenuOpen && (
-          <div className="sidebar__dropdown">
-            <div className="sidebar__dropdown-header">
-              <span className="sidebar__dropdown-name">{userName}</span>
-              <span className="sidebar__dropdown-role">{userRole}</span>
-            </div>
-            <div className="sidebar__dropdown-divider" />
-            <form action={signOutAction}>
-              <button type="submit" className="sidebar__dropdown-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign out
-              </button>
-            </form>
-          </div>
-        )}
+        <form action={signOutAction} className="sidebar__signout-form">
+          <button type="submit" className="sidebar__signout-btn" title="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {!collapsed && <span>Sign out</span>}
+          </button>
+        </form>
       </div>
     </>
   );

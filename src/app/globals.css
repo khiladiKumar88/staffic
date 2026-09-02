@@ -384,6 +384,43 @@ body {
   justify-content: center;
   padding: 8px 4px;
 }
+
+/* Static (non-dropdown) user area — avatar/name row + always-visible sign out */
+.sidebar__user-area--static {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar__user-area--static .sidebar__user-btn {
+  cursor: default;
+}
+.sidebar__signout-form {
+  width: 100%;
+}
+.sidebar__signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar__signout-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.sidebar--collapsed .sidebar__signout-btn {
+  justify-content: center;
+  padding: 8px 4px;
+}
 .sidebar__avatar {
   width: 32px;
   height: 32px;
