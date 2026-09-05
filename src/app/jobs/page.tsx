@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listPublicOpenJobs } from "@/lib/services/directHire";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Open positions — Staffic" };
 
 export default async function PublicJobBoardPage() {
