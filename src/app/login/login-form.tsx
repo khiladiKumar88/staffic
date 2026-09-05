@@ -18,7 +18,7 @@ export function LoginForm() {
           name="email"
           type="email"
           required
-          className="rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+          className="rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           placeholder="you@hospital.org"
         />
       </div>
@@ -33,7 +33,7 @@ export function LoginForm() {
           type="password"
           required
           minLength={8}
-          className="rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+          className="rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           placeholder="••••••••"
         />
       </div>

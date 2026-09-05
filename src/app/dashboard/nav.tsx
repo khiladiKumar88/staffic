@@ -14,7 +14,7 @@ export function DashboardNav({ items }: { items: { href: string; label: string }
           <Link
             key={item.href}
             href={item.href}
-            className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[13.5px] font-medium whitespace-nowrap transition-colors ${
+            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[13.5px] font-medium whitespace-nowrap transition-colors ${
               isActive ? "bg-primary-tint font-semibold text-primary" : "text-muted hover:bg-hover hover:text-ink"
             }`}
           >

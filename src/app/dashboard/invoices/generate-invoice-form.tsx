@@ -16,10 +16,10 @@ export function GenerateInvoiceForm({ placements }: { placements: PlacementOptio
   }
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-white p-5">
+    <form action={formAction} className="flex flex-wrap items-end gap-3 rounded-md border border-border bg-white p-5">
       <div>
         <label className="block text-sm font-medium text-ink">Placement</label>
-        <select name="placementId" required className="mt-1 rounded-lg border border-border px-3 py-2 text-sm">
+        <select name="placementId" required className="mt-1 rounded-md border border-border px-3 py-2 text-sm">
           {placements.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}
@@ -30,7 +30,7 @@ export function GenerateInvoiceForm({ placements }: { placements: PlacementOptio
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
       >
         {isPending ? "Generating…" : "Generate invoice from approved timesheets"}
       </button>

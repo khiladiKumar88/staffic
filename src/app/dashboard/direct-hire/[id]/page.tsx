@@ -34,12 +34,12 @@ export default async function DirectHireJobDetailPage({ params }: { params: Prom
         {job.status === "OPEN" && (
           <div className="flex gap-2">
             <form action={updateJobStatusAction.bind(null, job.id, "CLOSED")}>
-              <button className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface">
+              <button className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface">
                 Close posting
               </button>
             </form>
             <form action={updateJobStatusAction.bind(null, job.id, "FILLED")}>
-              <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark">
+              <button className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark">
                 Mark filled
               </button>
             </form>
@@ -54,7 +54,7 @@ export default async function DirectHireJobDetailPage({ params }: { params: Prom
         ) : (
           <div className="flex flex-col gap-4">
             {job.applications.map((app) => (
-              <div key={app.id} className="rounded-lg border border-border bg-white p-5">
+              <div key={app.id} className="rounded-md border border-border bg-white p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-ink">{app.applicantName}</p>
@@ -72,7 +72,7 @@ export default async function DirectHireJobDetailPage({ params }: { params: Prom
                   <div className="mt-4 flex flex-wrap gap-2">
                     {NEXT_STATUSES.filter((s) => s !== app.status).map((status) => (
                       <form key={status} action={updateApplicationStatusAction.bind(null, app.id, status, job.id)}>
-                        <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                        <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                           {status.replaceAll("_", " ")}
                         </button>
                       </form>

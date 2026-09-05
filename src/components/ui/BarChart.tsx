@@ -1,31 +1,30 @@
 "use client";
 
 /**
- * Polished CSS bar chart with hover tooltips and gradient bars.
- * No charting library needed for simple count-per-month visualization.
+ * Compact vertical bar chart — teal/dark gradient bars, enterprise styling.
  */
 export function BarChart({ data }: { data: { label: string; count: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
 
   return (
-    <div className="flex h-44 items-end gap-3">
+    <div className="flex h-40 items-end gap-3">
       {data.map((d) => {
         const pct = Math.max(6, Math.round((d.count / max) * 100));
         return (
-          <div key={d.label} className="group flex flex-1 flex-col items-center gap-2">
+          <div key={d.label} className="group flex flex-1 flex-col items-center gap-1.5">
             <span className="text-xs font-semibold text-ink opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               {d.count}
             </span>
             <div className="flex w-full flex-1 items-end justify-center px-0.5">
               <div
-                className="bar-chart-bar w-full rounded-t-lg transition-all duration-300 ease-out group-hover:opacity-90"
+                className="w-full rounded-t transition-all duration-300 ease-out group-hover:opacity-85"
                 style={{
                   height: `${pct}%`,
-                  background: "linear-gradient(to top, #3730A3, #4338CA, #6366F1)",
+                  background: "linear-gradient(to top, #0f766e, #14b8a6)",
                 }}
               />
             </div>
-            <span className="text-[11px] font-medium text-muted">{d.label}</span>
+            <span className="text-[10px] font-medium text-muted">{d.label}</span>
           </div>
         );
       })}

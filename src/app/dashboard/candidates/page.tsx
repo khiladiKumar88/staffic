@@ -23,7 +23,7 @@ export default async function CandidatesPage() {
         {candidates.length === 0 ? (
           <p className="text-sm text-muted">No candidates yet — add one above.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {candidates.map((c) => (
               <div key={c.id} className="flex items-center justify-between px-5 py-4">
                 <div>

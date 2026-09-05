@@ -46,7 +46,7 @@ export function Badge({ status, label }: { status: string; label?: string }) {
   const color = STATUS_COLOR[status] ?? "gray";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${COLOR_CLASSES[color]}`}
+      className={`inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${COLOR_CLASSES[color]}`}
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
       {label ?? formatLabel(status)}

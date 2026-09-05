@@ -27,7 +27,7 @@ export default async function MySubmissionsPage() {
           No submissions yet — browse the <a href="/dashboard/marketplace" className="underline">marketplace</a> to get started.
         </p>
       ) : (
-        <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+        <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
           {submissions.map((s) => (
             <div key={s.id} className="flex items-center justify-between px-5 py-4">
               <div>

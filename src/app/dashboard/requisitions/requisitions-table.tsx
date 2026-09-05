@@ -53,12 +53,12 @@ export function RequisitionsTable({ requisitions }: { requisitions: RequisitionR
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search requisitions…"
-          className="min-w-[220px] flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+          className="min-w-[220px] flex-1 rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+          className="rounded-md border border-border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
         >
           {STATUS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -85,7 +85,7 @@ export function RequisitionsTable({ requisitions }: { requisitions: RequisitionR
           {requisitions.length === 0 ? "No requisitions yet — post one below." : "No requisitions match your filters."}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-white">
+        <div className="overflow-x-auto rounded-md border border-border bg-white">
           <table className="min-w-full divide-y divide-border text-sm">
             <thead>
               <tr>

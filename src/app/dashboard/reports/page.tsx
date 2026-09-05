@@ -48,7 +48,7 @@ function Table({ columns, rows }: { columns: string[]; rows: (string | number)[]
     return <p className="text-sm text-muted">No data yet.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-white">
+    <div className="overflow-x-auto rounded-md border border-border bg-white">
       <table className="min-w-full divide-y divide-border text-sm">
         <thead>
           <tr>

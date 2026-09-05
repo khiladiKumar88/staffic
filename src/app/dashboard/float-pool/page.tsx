@@ -42,7 +42,7 @@ export default async function FloatPoolPage() {
         {workers.length === 0 ? (
           <p className="text-sm text-muted">No workers yet — add one above.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {workers.map((w) => (
               <div key={w.id} className="flex items-center justify-between px-5 py-4">
                 <div>
@@ -66,7 +66,7 @@ export default async function FloatPoolPage() {
         {assignments.length === 0 ? (
           <p className="text-sm text-muted">No assignments scheduled yet.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {assignments.map((a) => (
               <div key={a.id} className="flex items-center justify-between px-5 py-4">
                 <div>
@@ -85,12 +85,12 @@ export default async function FloatPoolPage() {
                   {a.status === "SCHEDULED" && (
                     <>
                       <form action={updateAssignmentStatusAction.bind(null, a.id, "IN_PROGRESS")}>
-                        <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                        <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                           Start
                         </button>
                       </form>
                       <form action={updateAssignmentStatusAction.bind(null, a.id, "CANCELLED")}>
-                        <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                        <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                           Cancel
                         </button>
                       </form>
@@ -98,7 +98,7 @@ export default async function FloatPoolPage() {
                   )}
                   {a.status === "IN_PROGRESS" && (
                     <form action={updateAssignmentStatusAction.bind(null, a.id, "COMPLETED")}>
-                      <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                      <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                         Mark complete
                       </button>
                     </form>

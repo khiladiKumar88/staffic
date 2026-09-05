@@ -43,7 +43,7 @@ export default async function TimesheetsPage() {
         {timesheets.length === 0 ? (
           <p className="text-sm text-muted">Nothing here yet.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {timesheets.map((t) => (
               <div key={t.id} className="flex items-center justify-between px-5 py-4">
                 <div>
@@ -63,12 +63,12 @@ export default async function TimesheetsPage() {
                   {isClientRole(user) && t.status === "SUBMITTED" && (
                     <>
                       <form action={reviewTimesheetAction.bind(null, t.id, true)}>
-                        <button className="rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-dark">
+                        <button className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-dark">
                           Approve
                         </button>
                       </form>
                       <form action={reviewTimesheetAction.bind(null, t.id, false)}>
-                        <button className="rounded-lg bg-status-red px-2.5 py-1 text-xs font-medium text-white hover:opacity-90">
+                        <button className="rounded-md bg-status-red px-2.5 py-1 text-xs font-medium text-white hover:opacity-90">
                           Reject
                         </button>
                       </form>

@@ -18,6 +18,14 @@ const ICON_MAP: Record<string, React.ReactNode> = {
       <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
   ),
+  Dashboard: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  ),
   Requisitions: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -38,6 +46,11 @@ const ICON_MAP: Record<string, React.ReactNode> = {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Submissions: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4z" />
     </svg>
   ),
   "My Submissions": (
@@ -71,6 +84,17 @@ const ICON_MAP: Record<string, React.ReactNode> = {
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ),
+  Vendors: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  ),
+  Credentials: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  ),
   Reports: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="20" x2="18" y2="10" />
@@ -99,20 +123,14 @@ const ICON_MAP: Record<string, React.ReactNode> = {
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   ),
-  Expenses: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-      <line x1="1" y1="10" x2="23" y2="10" />
-    </svg>
-  ),
 };
 
 function getIcon(label: string) {
-  return ICON_MAP[label] ?? ICON_MAP["Overview"];
+  return ICON_MAP[label] ?? ICON_MAP["Dashboard"];
 }
 
 /* ------------------------------------------------------------------ */
-/*  Sub-menu definitions — which nav items expand                     */
+/*  Types                                                             */
 /* ------------------------------------------------------------------ */
 
 export interface SubMenuItem {
@@ -124,6 +142,8 @@ export interface NavItem {
   href: string;
   label: string;
   children?: SubMenuItem[];
+  /** If set, a section header is rendered before this item */
+  sectionHeader?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -158,12 +178,10 @@ export function Sidebar({
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile sidebar on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Auto-expand the menu that contains the current route
   useEffect(() => {
     for (const item of items) {
       if (item.children) {
@@ -193,7 +211,7 @@ export function Sidebar({
   }
 
   function isActive(href: string, label: string) {
-    if (href === "/dashboard" && label === "Overview") return pathname === "/dashboard";
+    if (href === "/dashboard" && (label === "Overview" || label === "Dashboard")) return pathname === "/dashboard";
     return pathname.startsWith(href);
   }
 
@@ -204,13 +222,12 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      {/* Brand / Logo */}
+      {/* Brand */}
       <div className="sidebar__brand">
         <Link href="/dashboard" className="sidebar__logo-link">
           <div className="sidebar__logo-mark">S</div>
           {!collapsed && <span className="sidebar__logo-text">Staffic</span>}
         </Link>
-        {/* Desktop: collapse toggle */}
         <button
           type="button"
           onClick={onToggle}
@@ -222,7 +239,6 @@ export function Sidebar({
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        {/* Mobile: close button */}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
@@ -245,8 +261,15 @@ export function Sidebar({
 
           return (
             <div key={item.label}>
+              {/* Section header if provided */}
+              {item.sectionHeader && !collapsed && (
+                <div className="sidebar__section-header">{item.sectionHeader}</div>
+              )}
+              {item.sectionHeader && collapsed && (
+                <div className="sidebar__section-header" />
+              )}
+
               {hasChildren ? (
-                /* Parent with sub-menu */
                 <>
                   <button
                     type="button"
@@ -270,7 +293,6 @@ export function Sidebar({
                       </svg>
                     )}
                   </button>
-                  {/* Sub-menu items */}
                   {!collapsed && expanded && (
                     <div className="sidebar__submenu">
                       {item.children!.map((child) => {
@@ -289,7 +311,6 @@ export function Sidebar({
                   )}
                 </>
               ) : (
-                /* Regular nav item */
                 <Link
                   href={item.href}
                   className={`sidebar__nav-item ${active ? "sidebar__nav-item--active" : ""}`}
@@ -310,8 +331,17 @@ export function Sidebar({
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
-      {/* User area at bottom — sign out is always visible, no click-to-open
-          dropdown, so there's no toggle state that can fail to fire. */}
+      {/* Collapse sidebar link (desktop only, expanded only) */}
+      {!collapsed && (
+        <button type="button" onClick={onToggle} className="sidebar__collapse-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Collapse sidebar
+        </button>
+      )}
+
+      {/* User area */}
       <div ref={userMenuRef} className="sidebar__user-area sidebar__user-area--static">
         <div className="sidebar__user-btn">
           <div className="sidebar__avatar">{userInitials}</div>
@@ -339,26 +369,23 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile hamburger */}
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
         className="sidebar-mobile-toggle"
         aria-label="Open menu"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
 
-      {/* Mobile overlay backdrop */}
       {mobileOpen && (
         <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Desktop sidebar */}
       <aside
         className={`sidebar sidebar--desktop ${collapsed ? "sidebar--collapsed" : ""}`}
         style={{ width: collapsed ? 68 : 220 }}
@@ -366,7 +393,6 @@ export function Sidebar({
         {sidebarContent}
       </aside>
 
-      {/* Mobile sidebar (overlay) */}
       <aside className={`sidebar sidebar--mobile ${mobileOpen ? "sidebar--mobile-open" : ""}`}>
         {sidebarContent}
       </aside>

@@ -23,10 +23,10 @@ export function NewTimesheetForm({ placements }: { placements: PlacementOption[]
   }
 
   return (
-    <form ref={formRef} action={formAction} className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-white p-5">
+    <form ref={formRef} action={formAction} className="grid grid-cols-2 gap-4 rounded-md border border-border bg-white p-5">
       <div className="col-span-2">
         <label className="text-sm font-medium text-ink">Placement</label>
-        <select name="placementId" required className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm">
+        <select name="placementId" required className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm">
           {placements.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}
@@ -36,15 +36,15 @@ export function NewTimesheetForm({ placements }: { placements: PlacementOption[]
       </div>
       <div>
         <label className="text-sm font-medium text-ink">Week starting (Monday)</label>
-        <input name="weekStartDate" type="date" required className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+        <input name="weekStartDate" type="date" required className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm" />
       </div>
       <div>
         <label className="text-sm font-medium text-ink">Hours worked</label>
-        <input name="hoursWorked" type="number" step="0.25" required className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+        <input name="hoursWorked" type="number" step="0.25" required className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm" />
       </div>
       <div className="col-span-2">
         <label className="text-sm font-medium text-ink">Notes (optional)</label>
-        <input name="notes" className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+        <input name="notes" className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm" />
       </div>
 
       {errorMessage && <p className="col-span-2 text-sm text-status-red">{errorMessage}</p>}
@@ -53,7 +53,7 @@ export function NewTimesheetForm({ placements }: { placements: PlacementOption[]
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
         >
           {isPending ? "Submitting…" : "Submit timesheet"}
         </button>

@@ -8,7 +8,7 @@
  */
 export function OrgTypeBadge({ type }: { type: "CLIENT" | "AGENCY" }) {
   return (
-    <div className="hidden items-center rounded-lg border border-border bg-white p-0.5 md:flex">
+    <div className="hidden items-center rounded-md border border-border bg-white p-0.5 md:flex">
       <span
         className={`rounded-md px-3 py-1 text-[13px] font-medium ${
           type === "CLIENT" ? "bg-ink text-white" : "text-muted"

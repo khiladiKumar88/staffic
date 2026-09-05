@@ -3,12 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { signOutAction } from "@/lib/actions/sign-out";
 
-/**
- * Avatar + name/role + dropdown chevron, matching the mockup's header
- * exactly. The mockup's chevron implies a dropdown menu, so this is a real
- * dropdown (not just decoration) — its one real action is Sign out, the
- * same action the old plain-text "Sign out" link performed.
- */
 export function UserMenu({ name, role, initials }: { name: string; role: string; initials: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -26,34 +20,22 @@ export function UserMenu({ name, role, initials }: { name: string; role: string;
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-hover"
+        className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-hover transition-colors"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[13px] font-semibold text-primary">
-          {initials}
-        </div>
-        <div className="hidden flex-col items-start leading-tight sm:flex">
-          <span className="text-[13px] font-semibold whitespace-nowrap text-ink">{name}</span>
-          <span className="text-[11.5px] text-muted">{role}</span>
-        </div>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-        >
-          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <div className="topbar__avatar">{initials}</div>
+        <span className="topbar__user-name hidden sm:inline">{name}</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-border bg-white py-1 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-md border border-border bg-white py-1 shadow-lg">
+          <div className="px-3 py-2 border-b border-border">
+            <span className="block text-xs font-semibold text-ink">{name}</span>
+            <span className="block text-[11px] text-muted mt-0.5">{role}</span>
+          </div>
           <form action={signOutAction}>
             <button
               type="submit"
-              className="block w-full px-3 py-2 text-left text-sm font-medium text-ink hover:bg-hover"
+              className="block w-full px-3 py-2 text-left text-sm font-medium text-ink hover:bg-hover transition-colors"
             >
               Sign out
             </button>

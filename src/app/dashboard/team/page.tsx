@@ -22,7 +22,7 @@ export default async function TeamPage() {
 
       <div>
         <h2 className="mb-3 text-lg font-semibold text-ink">Members</h2>
-        <div className="overflow-x-auto rounded-lg border border-border bg-white">
+        <div className="overflow-x-auto rounded-md border border-border bg-white">
           <table className="min-w-full divide-y divide-border text-sm">
             <thead>
               <tr>
@@ -63,7 +63,7 @@ export default async function TeamPage() {
               {invites.map((inv) => (
                 <div
                   key={inv.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-white p-4"
+                  className="flex items-center justify-between rounded-md border border-border bg-white p-4"
                 >
                   <div>
                     <p className="text-sm font-medium text-ink">{inv.email}</p>
@@ -72,7 +72,7 @@ export default async function TeamPage() {
                     </p>
                   </div>
                   <form action={revokeInviteAction.bind(null, inv.id)}>
-                    <button className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface">
+                    <button className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface">
                       Revoke
                     </button>
                   </form>

@@ -36,7 +36,7 @@ export function StatCard({
   const toneIcon = deltaTone !== "neutral" ? TONE_ICON[deltaTone] : null;
 
   return (
-    <div className="group rounded-2xl border border-border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group rounded-md border border-border bg-white p-4 transition-all duration-150 hover:shadow-sm">
       <div className="flex items-start justify-between">
         <span className="text-[13px] font-medium tracking-wide text-muted">{label}</span>
         {icon ??
@@ -60,7 +60,7 @@ export function StatCard({
             </div>
           ))}
       </div>
-      <span className="mt-3 block text-3xl font-bold tracking-tight text-ink">{value}</span>
+      <span className="mt-2 block text-2xl font-bold tracking-tight text-ink">{value}</span>
       {delta && (
         <span className={`mt-1.5 block text-xs font-medium ${deltaClass}`}>{delta}</span>
       )}

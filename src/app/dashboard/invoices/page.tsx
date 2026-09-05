@@ -45,7 +45,7 @@ export default async function InvoicesPage() {
         {invoices.length === 0 ? (
           <p className="text-sm text-muted">No invoices yet.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {invoices.map((inv) => (
               <div key={inv.id} className="flex items-center justify-between px-5 py-4">
                 <div>
@@ -62,14 +62,14 @@ export default async function InvoicesPage() {
                   </span>
                   {isAgencyRole(user) && inv.status === "DRAFT" && (
                     <form action={sendInvoiceAction.bind(null, inv.id)}>
-                      <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                      <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                         Send
                       </button>
                     </form>
                   )}
                   {isClientRole(user) && inv.status === "SENT" && (
                     <form action={markInvoicePaidAction.bind(null, inv.id)}>
-                      <button className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
+                      <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">
                         Mark paid
                       </button>
                     </form>

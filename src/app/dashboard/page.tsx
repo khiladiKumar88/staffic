@@ -8,20 +8,46 @@ import { buttonClasses } from "@/components/ui/Button";
 import { BarChart } from "@/components/ui/BarChart";
 
 /* ------------------------------------------------------------------ */
-/*  Section header bar component (HWL-style)                          */
+/*  Stat strip item                                                    */
+/* ------------------------------------------------------------------ */
+
+function StatItem({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: number | string;
+  sub?: string;
+}) {
+  return (
+    <div className="stat-strip__item">
+      <span className="stat-strip__label">{label}</span>
+      <div className="stat-strip__value-row">
+        <span className="stat-strip__value">{value}</span>
+      </div>
+      {sub && <span className="stat-strip__sub">{sub}</span>}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section header (compact, flat)                                     */
 /* ------------------------------------------------------------------ */
 
 function SectionHeader({
   title,
   actionLabel,
   actionHref,
+  standalone = false,
 }: {
   title: string;
   actionLabel?: string;
   actionHref?: string;
+  standalone?: boolean;
 }) {
   return (
-    <div className="section-header">
+    <div className={`section-header ${standalone ? "section-header--standalone" : ""}`}>
       <span className="section-header__title">{title}</span>
       {actionLabel && actionHref && (
         <Link href={actionHref} className="section-header__action">
@@ -33,36 +59,12 @@ function SectionHeader({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Stat grid item                                                     */
-/* ------------------------------------------------------------------ */
-
-function StatGridItem({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: number | string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="stat-grid__item">
-      <span className="stat-grid__label">{label}</span>
-      <span className={`stat-grid__value ${highlight ? "stat-grid__value--highlight" : ""}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default async function DashboardOverviewPage() {
   const session = await auth();
   const user = session!.user;
-  const firstName = user.name.split(" ")[0];
 
   /* ---- Client dashboard ---- */
   if (isClientRole(user)) {
@@ -74,54 +76,52 @@ export default async function DashboardOverviewPage() {
     const { reqOpen, reqOnHold, reqFilled, reqTotal, subToReview, subApproved, subPlacements, subTotal, recentRequisitions } = data;
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         {/* Page heading */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-ink">Dashboard</h1>
-            <p className="mt-0.5 text-sm text-muted">Welcome back, {firstName}</p>
+            <h1 className="text-lg font-bold text-ink">Contingent labor overview</h1>
+            <p className="mt-0.5 text-[13px] text-muted">
+              {reqTotal} total requisitions &middot; {subTotal} submissions
+            </p>
           </div>
-          <Link href="/dashboard/requisitions#new-requisition" className={buttonClasses("primary")}>
-            + New requisition
-          </Link>
-        </div>
-
-        {/* Requisition summary section */}
-        <div>
-          <SectionHeader
-            title="Requisition Summary"
-            actionLabel="View all"
-            actionHref="/dashboard/requisitions"
-          />
-          <div className="stat-grid">
-            <StatGridItem label="Open" value={reqOpen} highlight={reqOpen > 0} />
-            <StatGridItem label="On Hold" value={reqOnHold} />
-            <StatGridItem label="Filled" value={reqFilled} />
-            <StatGridItem label="Total" value={reqTotal} />
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted border border-border rounded px-2.5 py-1.5">Last 30 days</span>
+            <Link href="/dashboard/requisitions#new-requisition" className={buttonClasses("primary")}>
+              New requisition
+            </Link>
           </div>
         </div>
 
-        {/* Submissions review section */}
-        <div>
-          <SectionHeader
-            title="Submissions Review"
-            actionLabel="View all"
-            actionHref="/dashboard/submissions"
-          />
-          <div className="stat-grid">
-            <StatGridItem label="Awaiting Review" value={subToReview} highlight={subToReview > 0} />
-            <StatGridItem label="Approved" value={subApproved} />
-            <StatGridItem label="Placements" value={subPlacements} />
-            <StatGridItem label="Total" value={subTotal} />
-          </div>
+        {/* Stat strip */}
+        <div className="stat-strip">
+          <StatItem label="Open reqs" value={reqOpen} sub={reqOnHold > 0 ? `${reqOnHold} on hold` : undefined} />
+          <StatItem label="Awaiting review" value={subToReview} />
+          <StatItem label="Approved" value={subApproved} />
+          <StatItem label="Placements" value={subPlacements} />
+          <StatItem label="Filled reqs" value={reqFilled} />
         </div>
+
+        {/* Alert banner for pending items */}
+        {subToReview > 0 && (
+          <div className="alert-banner">
+            <div className="alert-banner__text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span>{subToReview} submission{subToReview > 1 ? "s" : ""} awaiting your review.</span>
+            </div>
+            <Link href="/dashboard/submissions" className="alert-banner__action">Review now</Link>
+          </div>
+        )}
 
         {/* Recent requisitions table + chart */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
-            <SectionHeader title="Recent Requisitions" actionLabel="View all" actionHref="/dashboard/requisitions" />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="rounded-md border border-border bg-white lg:col-span-2 overflow-hidden">
+            <SectionHeader title="Recent requisitions" actionLabel="View all" actionHref="/dashboard/requisitions" />
             {recentRequisitions.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted">No requisitions yet — post one to get started.</p>
+              <p className="px-4 py-5 text-sm text-muted">No requisitions yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="data-table">
@@ -130,14 +130,14 @@ export default async function DashboardOverviewPage() {
                       <th>Requisition</th>
                       <th>Specialty</th>
                       <th>Status</th>
-                      <th>Submissions</th>
+                      <th>Subs</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentRequisitions.map((r) => (
                       <tr key={r.id}>
                         <td>
-                          <Link href={`/dashboard/requisitions/${r.id}`} className="font-medium text-ink hover:text-primary">
+                          <Link href={`/dashboard/requisitions/${r.id}`} className="font-medium text-primary hover:underline">
                             {r.title}
                           </Link>
                         </td>
@@ -152,8 +152,8 @@ export default async function DashboardOverviewPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-border bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold text-ink">Placements, last 6 months</h2>
+          <div className="rounded-md border border-border bg-white p-4">
+            <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">Placements, last 6 months</h2>
             <BarChart data={placementsByMonth.map((r) => ({ label: r.label, count: r.count }))} />
           </div>
         </div>
@@ -171,46 +171,45 @@ export default async function DashboardOverviewPage() {
     const { candidateCount, subPending, subApproved, subPlacements, subTotal, recentSubmissions } = data;
 
     return (
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-ink">Dashboard</h1>
-            <p className="mt-0.5 text-sm text-muted">Welcome back, {firstName}</p>
+            <h1 className="text-lg font-bold text-ink">Agency overview</h1>
+            <p className="mt-0.5 text-[13px] text-muted">
+              {candidateCount} active candidates &middot; {subTotal} submissions
+            </p>
           </div>
           <Link href="/dashboard/marketplace" className={buttonClasses("primary")}>
-            Browse open requisitions
+            Browse requisitions
           </Link>
         </div>
 
-        {/* Staff Pool section */}
-        <div>
-          <SectionHeader title="Staff Pool" />
-          <div className="stat-grid">
-            <StatGridItem label="Active Candidates" value={candidateCount} highlight />
-          </div>
+        {/* Stat strip */}
+        <div className="stat-strip">
+          <StatItem label="Active candidates" value={candidateCount} />
+          <StatItem label="Pending review" value={subPending} />
+          <StatItem label="Approved" value={subApproved} />
+          <StatItem label="Placements" value={subPlacements} />
+          <StatItem label="Total subs" value={subTotal} />
         </div>
 
-        {/* Submissions section */}
-        <div>
-          <SectionHeader
-            title="Submission Status"
-            actionLabel="View all"
-            actionHref="/dashboard/submissions"
-          />
-          <div className="stat-grid">
-            <StatGridItem label="Pending Review" value={subPending} highlight={subPending > 0} />
-            <StatGridItem label="Approved" value={subApproved} />
-            <StatGridItem label="Placements" value={subPlacements} />
-            <StatGridItem label="Total" value={subTotal} />
+        {subPending > 0 && (
+          <div className="alert-banner">
+            <div className="alert-banner__text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{subPending} submission{subPending > 1 ? "s" : ""} pending client review.</span>
+            </div>
+            <Link href="/dashboard/submissions" className="alert-banner__action">View status</Link>
           </div>
-        </div>
+        )}
 
-        {/* Recent submissions table + chart */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-white lg:col-span-2 overflow-hidden">
-            <SectionHeader title="Recent Submissions" actionLabel="View all" actionHref="/dashboard/submissions" />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="rounded-md border border-border bg-white lg:col-span-2 overflow-hidden">
+            <SectionHeader title="Recent submissions" actionLabel="View all" actionHref="/dashboard/submissions" />
             {recentSubmissions.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted">No submissions yet — browse the marketplace to get started.</p>
+              <p className="px-4 py-5 text-sm text-muted">No submissions yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="data-table">
@@ -235,8 +234,8 @@ export default async function DashboardOverviewPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-border bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold text-ink">Placements, last 6 months</h2>
+          <div className="rounded-md border border-border bg-white p-4">
+            <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">Placements, last 6 months</h2>
             <BarChart data={placementsByMonth.map((r) => ({ label: r.label, count: r.count }))} />
           </div>
         </div>
@@ -246,19 +245,18 @@ export default async function DashboardOverviewPage() {
 
   /* ---- Platform admin dashboard ---- */
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-bold text-ink">Dashboard</h1>
-        <p className="mt-0.5 text-sm text-muted">Welcome back, {user.name}</p>
+        <h1 className="text-lg font-bold text-ink">Platform overview</h1>
+        <p className="mt-0.5 text-[13px] text-muted">System administration</p>
       </div>
-      <div>
-        <SectionHeader title="Platform Overview" />
-        <p className="mt-2 text-sm text-muted">
+      <div className="rounded-md border border-border bg-white p-5">
+        <p className="text-sm text-muted">
           See{" "}
           <Link href="/dashboard/reports" className="font-medium text-primary hover:underline">
             Reports
           </Link>{" "}
-          for the platform-wide overview, or review{" "}
+          for platform-wide metrics, or review{" "}
           <Link href="/dashboard/admin/agencies" className="font-medium text-primary hover:underline">
             Pending Agencies
           </Link>

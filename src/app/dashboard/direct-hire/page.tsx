@@ -41,7 +41,7 @@ export default async function DirectHirePage() {
         {jobs.length === 0 ? (
           <p className="text-sm text-muted">No postings yet — post one above.</p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+          <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
             {jobs.map((job) => (
               <Link
                 key={job.id}

@@ -12,7 +12,7 @@ const SPECIALTIES = [
 ];
 
 const inputClass =
-  "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
+  "mt-1 w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
 
 export function NewRequisitionForm() {
   const [errorMessage, formAction, isPending] = useActionState(createRequisitionAction, undefined);
@@ -28,7 +28,7 @@ export function NewRequisitionForm() {
   }, [isPending, errorMessage]);
 
   return (
-    <div className="rounded-xl border border-border bg-white">
+    <div className="rounded-md border border-border bg-white">
       <form ref={formRef} action={formAction} className="grid grid-cols-2 gap-4 p-5">
         <div className="col-span-2">
           <label className="text-sm font-medium text-ink">Title</label>

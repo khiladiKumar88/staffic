@@ -7,62 +7,49 @@ import { DashboardShell } from "./dashboard-shell";
 import type { NavItem } from "./sidebar";
 
 const CLIENT_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/requisitions", label: "Requisitions" },
-  { href: "/dashboard/float-pool", label: "Float Pool" },
-  { href: "/dashboard/direct-hire", label: "Direct Hire" },
+  { href: "/dashboard/submissions", label: "Submissions" },
   { href: "/dashboard/timesheets", label: "Timesheets" },
-  {
-    href: "/dashboard/invoices",
-    label: "Invoices",
-    children: [
-      { href: "/dashboard/invoices", label: "All Invoices" },
-    ],
-  },
+  { href: "/dashboard/invoices", label: "Invoices" },
+  { href: "/dashboard/float-pool", label: "Float Pool", sectionHeader: "Program" },
+  { href: "/dashboard/direct-hire", label: "Direct Hire" },
   { href: "/dashboard/reports", label: "Reports" },
-  { href: "/dashboard/team", label: "Team" },
   {
     href: "/dashboard/settings",
     label: "Settings",
     children: [
-      { href: "/dashboard/team", label: "Team Members" },
+      { href: "/dashboard/team", label: "Users & roles" },
     ],
   },
 ];
 
 const AGENCY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/marketplace", label: "Marketplace" },
   { href: "/dashboard/candidates", label: "Candidates" },
   { href: "/dashboard/submissions", label: "My Submissions" },
   { href: "/dashboard/timesheets", label: "Timesheets" },
-  {
-    href: "/dashboard/invoices",
-    label: "Invoices",
-    children: [
-      { href: "/dashboard/invoices", label: "All Invoices" },
-    ],
-  },
-  { href: "/dashboard/reports", label: "Reports" },
-  { href: "/dashboard/team", label: "Team" },
+  { href: "/dashboard/invoices", label: "Invoices" },
+  { href: "/dashboard/reports", label: "Reports", sectionHeader: "Program" },
   {
     href: "/dashboard/settings",
     label: "Settings",
     children: [
-      { href: "/dashboard/team", label: "Team Members" },
+      { href: "/dashboard/team", label: "Users & roles" },
     ],
   },
 ];
 
 const PLATFORM_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/admin/agencies", label: "Pending Agencies" },
   { href: "/dashboard/reports", label: "Reports" },
   {
     href: "/dashboard/settings",
     label: "Settings",
     children: [
-      { href: "/dashboard/team", label: "Team Members" },
+      { href: "/dashboard/team", label: "Users & roles" },
     ],
   },
 ];
@@ -97,8 +84,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (organization && organization.type === "AGENCY" && organization.approvalStatus !== "APPROVED") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-4">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
+        <div className="w-full max-w-md rounded-md border border-border bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center rounded-md bg-primary text-base font-bold text-white">
             S
           </div>
           {organization.approvalStatus === "PENDING" ? (

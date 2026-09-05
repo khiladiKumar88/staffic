@@ -16,7 +16,7 @@ export default async function PublicJobBoardPage() {
       {jobs.length === 0 ? (
         <p className="text-sm text-muted">No open positions right now — check back soon.</p>
       ) : (
-        <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white">
+        <div className="flex flex-col divide-y divide-border rounded-md border border-border bg-white">
           {jobs.map((job) => (
             <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between px-5 py-4 hover:bg-surface">
               <div>

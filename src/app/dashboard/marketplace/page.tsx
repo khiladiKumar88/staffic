@@ -19,7 +19,7 @@ export default async function MarketplacePage() {
     <div>
       <h1 className="mb-4 text-xl font-semibold text-ink">Open requisitions</h1>
       {candidates.length === 0 && (
-        <p className="mb-4 rounded-lg bg-status-amber-tint px-4 py-2 text-sm text-status-amber">
+        <p className="mb-4 rounded-md bg-status-amber-tint px-4 py-2 text-sm text-status-amber">
           Add a candidate to your roster before submitting to a requisition.
         </p>
       )}
@@ -28,7 +28,7 @@ export default async function MarketplacePage() {
       ) : (
         <div className="flex flex-col gap-4">
           {requisitions.map((req) => (
-            <div key={req.id} className="rounded-lg border border-border bg-white p-5">
+            <div key={req.id} className="rounded-md border border-border bg-white p-5">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-medium text-ink">{req.title}</p>
